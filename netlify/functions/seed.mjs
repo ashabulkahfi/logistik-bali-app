@@ -1,6 +1,7 @@
-// Data awal dari Logistik_Akomodasi_Gathering_Bali_v3.xlsx
+// Data awal dari Logistik_Akomodasi_Gathering_Bali_v4.xlsx
 export default {
  "rev": 1,
+ "seedVersion": 4,
  "checkpoints": [
   {
    "day": "Day 1",
@@ -1046,8 +1047,8 @@ export default {
     "kegunaan": "Foto & acara inti",
     "qty": "1",
     "satuan": "pcs",
-    "sumber": "Cek Sie Dokumentasi",
-    "pic": "Kahfi",
+    "sumber": "Cek Sie Acara",
+    "pic": "",
     "harga": "",
     "berat": "",
     "status": "Belum",
@@ -1064,7 +1065,7 @@ export default {
     "harga": "",
     "berat": "",
     "status": "Belum",
-    "catatan": "Ada electone tanpa singer (RAB) — pastikan ada mic untuk speech & games"
+    "catatan": "Live singer + sound dari vendor; minta 2 wireless mic (MC & games)"
    },
    {
     "id": "pr3",
@@ -1072,7 +1073,7 @@ export default {
     "kegunaan": "Games / hiburan",
     "qty": "4",
     "satuan": "set",
-    "sumber": "Beli Dari Jkt",
+    "sumber": "Beli dari JKT",
     "pic": "",
     "harga": "",
     "berat": "",
@@ -1085,7 +1086,7 @@ export default {
     "kegunaan": "Penyerahan hadiah",
     "qty": "40",
     "satuan": "pcs",
-    "sumber": "Bawa dari Bogor",
+    "sumber": "Beli dari JKT",
     "pic": "",
     "harga": "",
     "berat": "",
@@ -1093,12 +1094,12 @@ export default {
     "catatan": "Semua peserta + juara lomba"
    },
    {
-    "id": "pr6",
+    "id": "pr5",
     "item": "Tag koper / pita warna seragam",
     "kegunaan": "Bagasi",
     "qty": "40",
     "satuan": "pcs",
-    "sumber": "Bawa dari Bogor",
+    "sumber": "Beli dari JKT",
     "pic": "",
     "harga": "",
     "berat": "",
@@ -1106,12 +1107,12 @@ export default {
     "catatan": "Mudah dikenali di conveyor"
    },
    {
-    "id": "pr11",
+    "id": "pr6",
     "item": "Lakban kertas & bening",
     "kegunaan": "Pasang spanduk/dekor",
     "qty": "2",
     "satuan": "roll",
-    "sumber": "Vendor/Venue",
+    "sumber": "Beli dari JKT",
     "pic": "",
     "harga": "",
     "berat": "",
@@ -1119,12 +1120,12 @@ export default {
     "catatan": ""
    },
    {
-    "id": "pr12",
+    "id": "pr7",
     "item": "Double tape",
     "kegunaan": "Pasang spanduk/dekor",
     "qty": "2",
     "satuan": "roll",
-    "sumber": "Vendor/Venue",
+    "sumber": "Beli dari JKT",
     "pic": "",
     "harga": "",
     "berat": "",
@@ -1132,12 +1133,12 @@ export default {
     "catatan": ""
    },
    {
-    "id": "pr13",
+    "id": "pr8",
     "item": "Tali rafia & cable ties",
     "kegunaan": "Pasang spanduk",
     "qty": "1",
     "satuan": "set",
-    "sumber": "Vendor/Venue",
+    "sumber": "Beli dari JKT",
     "pic": "",
     "harga": "",
     "berat": "",
@@ -1145,7 +1146,7 @@ export default {
     "catatan": ""
    },
    {
-    "id": "pr14",
+    "id": "pr9",
     "item": "Gunting & cutter",
     "kegunaan": "Umum",
     "qty": "1",
@@ -1158,7 +1159,7 @@ export default {
     "catatan": "Pinjam kantor. Benda tajam tidak boleh di kabin"
    },
    {
-    "id": "pr15",
+    "id": "pr10",
     "item": "Spidol & pulpen",
     "kegunaan": "ATK",
     "qty": "1",
@@ -1171,7 +1172,7 @@ export default {
     "catatan": ""
    },
    {
-    "id": "pr16",
+    "id": "pr11",
     "item": "Baterai AA/AAA cadangan",
     "kegunaan": "Mic",
     "qty": "8",
@@ -1184,7 +1185,7 @@ export default {
     "catatan": "Tanya venue"
    },
    {
-    "id": "pr17",
+    "id": "pr12",
     "item": "Terminal listrik",
     "kegunaan": "Acara inti",
     "qty": "1",
@@ -1197,7 +1198,7 @@ export default {
     "catatan": ""
    },
    {
-    "id": "pr18",
+    "id": "pr13",
     "item": "Trash bag",
     "kegunaan": "Umum",
     "qty": "1",
@@ -1604,6 +1605,98 @@ export default {
     "catatan": ""
    }
   ],
+  "gala": [
+   {
+    "id": "g1",
+    "waktu": "Sebelum 19.00",
+    "segmen": "Setup venue",
+    "tugas": "Pasang rol kabel; tempel signage dengan lakban; siapkan meja hadiah & meja/box kado",
+    "pic": "Sidik",
+    "siap": "",
+    "catatan": "Venue setup & placement props = tugas Logistik di checklist panitia"
+   },
+   {
+    "id": "g2",
+    "waktu": "Sebelum 19.00",
+    "segmen": "Setup venue",
+    "tugas": "Serahkan print rundown & cue card ke MC, Stage Manager & PIC",
+    "pic": "Kahfi",
+    "siap": "",
+    "catatan": ""
+   },
+   {
+    "id": "g3",
+    "waktu": "Sebelum 19.00",
+    "segmen": "Setup venue",
+    "tugas": "Hadiah 3 games sudah dilabel & diletakkan di meja hadiah",
+    "pic": "Sidik",
+    "siap": "",
+    "catatan": ""
+   },
+   {
+    "id": "g4",
+    "waktu": "Sebelum 19.00",
+    "segmen": "Setup venue",
+    "tugas": "Kartu simbolis doorprize + nomor undian + box undian siap",
+    "pic": "Maya",
+    "siap": "",
+    "catatan": "Bersama Sie Acara"
+   },
+   {
+    "id": "g5",
+    "waktu": "19.15–19.20",
+    "segmen": "Arrival & seating",
+    "tugas": "Head count peserta masuk venue",
+    "pic": "Kahfi",
+    "siap": "",
+    "catatan": "Isi kolom 'Gala dinner' di HeadCount"
+   },
+   {
+    "id": "g6",
+    "waktu": "20.25–20.40",
+    "segmen": "Tukar kado",
+    "tugas": "Box/area kado, nomor & label kado tersedia",
+    "pic": "Maya",
+    "siap": "",
+    "catatan": "Mekanisme dari Sie Acara"
+   },
+   {
+    "id": "g7",
+    "waktu": "20.40–21.13",
+    "segmen": "Game 1–3",
+    "tugas": "Props games di posisi sebelum 20.40; serahkan hadiah ke MC per game",
+    "pic": "Sidik",
+    "siap": "",
+    "catatan": "Hadiah 3 x Rp100rb"
+   },
+   {
+    "id": "g8",
+    "waktu": "21.13–21.35",
+    "segmen": "Doorprize",
+    "tugas": "Kartu simbolis berurutan (kecil → utama); catat nama pemenang di sheet Hadiah",
+    "pic": "Maya",
+    "siap": "",
+    "catatan": "Hadiah asli diserahkan di kantor"
+   },
+   {
+    "id": "g9",
+    "waktu": "21.58–22.00",
+    "segmen": "Closing",
+    "tugas": "Bereskan barang panitia (rol kabel, sisa ATK, box), cek tidak ada yang tertinggal",
+    "pic": "Akbar",
+    "siap": "",
+    "catatan": ""
+   },
+   {
+    "id": "g10",
+    "waktu": "22.00",
+    "segmen": "Ke bus",
+    "tugas": "Head count sebelum bus berangkat ke hotel",
+    "pic": "Kahfi",
+    "siap": "",
+    "catatan": ""
+   }
+  ],
   "belanja": [
    {
     "id": "b1",
@@ -1684,6 +1777,86 @@ export default {
     "harga": "",
     "sudah": "",
     "catatan": ""
+   },
+   {
+    "id": "b9",
+    "item": "Hadiah Game 1 (SilverQueen / jajanan)",
+    "kategori": "Gala dinner",
+    "qty": "1",
+    "satuan": "paket",
+    "harga": "100000",
+    "sudah": "",
+    "catatan": "Budget Rp100rb. Beli di Bogor/Bali? Dihias? — diskusikan"
+   },
+   {
+    "id": "b10",
+    "item": "Hadiah Game 2 (SilverQueen / jajanan)",
+    "kategori": "Gala dinner",
+    "qty": "1",
+    "satuan": "paket",
+    "harga": "100000",
+    "sudah": "",
+    "catatan": "Budget Rp100rb"
+   },
+   {
+    "id": "b11",
+    "item": "Hadiah Game 3 (SilverQueen / jajanan)",
+    "kategori": "Gala dinner",
+    "qty": "1",
+    "satuan": "paket",
+    "harga": "100000",
+    "sudah": "",
+    "catatan": "Budget Rp100rb"
+   },
+   {
+    "id": "b12",
+    "item": "Print cue card + rundown gala dinner",
+    "kategori": "Gala dinner",
+    "qty": "1",
+    "satuan": "paket",
+    "harga": "",
+    "sudah": "",
+    "catatan": "Untuk MC, Stage Manager & PIC"
+   },
+   {
+    "id": "b13",
+    "item": "ATK: pulpen",
+    "kategori": "Gala dinner",
+    "qty": "1",
+    "satuan": "pak",
+    "harga": "",
+    "sudah": "",
+    "catatan": ""
+   },
+   {
+    "id": "b14",
+    "item": "ATK: kertas",
+    "kategori": "Gala dinner",
+    "qty": "1",
+    "satuan": "pak",
+    "harga": "",
+    "sudah": "",
+    "catatan": "Juga untuk nomor undian / label kado"
+   },
+   {
+    "id": "b15",
+    "item": "ATK: lakban / tape",
+    "kategori": "Gala dinner",
+    "qty": "2",
+    "satuan": "roll",
+    "harga": "",
+    "sudah": "",
+    "catatan": ""
+   },
+   {
+    "id": "b16",
+    "item": "Rol kabel",
+    "kategori": "Gala dinner",
+    "qty": "1",
+    "satuan": "pcs",
+    "harga": "",
+    "sudah": "",
+    "catatan": "Beli atau pinjam kantor"
    }
   ],
   "bawaan": [
@@ -1721,13 +1894,153 @@ export default {
     "item": "Day 1 koper tetap di bus sampai tiba hotel ±22.30. Siapkan TAS KECIL: baju renang/ganti, perlengkapan sholat, baju gala dinner.",
     "wajib": "",
     "ket": ""
+   },
+   {
+    "id": "w7",
+    "kategori": "Dokumen",
+    "item": "KTP asli",
+    "wajib": "Wajib",
+    "ket": "Untuk boarding (anak: sesuai ketentuan maskapai)"
+   },
+   {
+    "id": "w8",
+    "kategori": "Dokumen",
+    "item": "E-ticket / boarding pass",
+    "wajib": "Wajib",
+    "ket": "Simpan di HP"
+   },
+   {
+    "id": "w9",
+    "kategori": "Pakaian",
+    "item": "Baju untuk gala dinner",
+    "wajib": "Wajib",
+    "ket": "Dresscode menyusul dari Sie Acara — taruh di tas kecil (Day 1)"
+   },
+   {
+    "id": "w10",
+    "kategori": "Ibadah",
+    "item": "Perlengkapan sholat (sarung / mukena)",
+    "wajib": "Wajib",
+    "ket": "Sholat Jumat di Masjid Puja Mandala (Day 1)"
+   },
+   {
+    "id": "w11",
+    "kategori": "Pakaian",
+    "item": "Baju santai untuk 3 hari",
+    "wajib": "Wajib",
+    "ket": ""
+   },
+   {
+    "id": "w12",
+    "kategori": "Pakaian",
+    "item": "Baju renang / baju ganti",
+    "wajib": "Wajib",
+    "ket": "Minoo Beach Club, Pantai Melasti, D'Tukad River Club, Tegenungan"
+   },
+   {
+    "id": "w13",
+    "kategori": "Pakaian",
+    "item": "Handuk kecil",
+    "wajib": "Opsional",
+    "ket": "Untuk setelah aktivitas air"
+   },
+   {
+    "id": "w14",
+    "kategori": "Pakaian",
+    "item": "Jaket tipis",
+    "wajib": "Wajib",
+    "ket": "Pesawat & bus ber-AC; Penglipuran lebih sejuk"
+   },
+   {
+    "id": "w15",
+    "kategori": "Pakaian",
+    "item": "Sandal anti-licin / sandal gunung",
+    "wajib": "Wajib",
+    "ket": "Tangga Tegenungan & river club licin"
+   },
+   {
+    "id": "w16",
+    "kategori": "Pakaian",
+    "item": "Sepatu nyaman",
+    "wajib": "Wajib",
+    "ket": "Jalan kaki di Penglipuran"
+   },
+   {
+    "id": "w17",
+    "kategori": "Pakaian",
+    "item": "Topi & kacamata hitam",
+    "wajib": "Opsional",
+    "ket": ""
+   },
+   {
+    "id": "w18",
+    "kategori": "Kesehatan",
+    "item": "Obat pribadi / obat rutin",
+    "wajib": "Wajib",
+    "ket": "Di tas kabin"
+   },
+   {
+    "id": "w19",
+    "kategori": "Kesehatan",
+    "item": "Sunblock",
+    "wajib": "Wajib",
+    "ket": "Banyak aktivitas di bawah matahari"
+   },
+   {
+    "id": "w20",
+    "kategori": "Lainnya",
+    "item": "Kantong plastik / dry bag",
+    "wajib": "Wajib",
+    "ket": "Untuk baju basah & HP"
+   },
+   {
+    "id": "w21",
+    "kategori": "Lainnya",
+    "item": "Charger HP",
+    "wajib": "Wajib",
+    "ket": ""
+   },
+   {
+    "id": "w22",
+    "kategori": "Lainnya",
+    "item": "Power bank",
+    "wajib": "Opsional",
+    "ket": "Hanya di kabin"
+   },
+   {
+    "id": "w23",
+    "kategori": "Lainnya",
+    "item": "Perlengkapan mandi pribadi",
+    "wajib": "Opsional",
+    "ket": "Hotel umumnya menyediakan dasar"
+   },
+   {
+    "id": "w24",
+    "kategori": "Lainnya",
+    "item": "Tumbler",
+    "wajib": "Opsional",
+    "ket": "Air mineral dari vendor 1 botol/orang/hari"
+   },
+   {
+    "id": "w25",
+    "kategori": "Lainnya",
+    "item": "Uang tunai secukupnya",
+    "wajib": "Wajib",
+    "ket": "Pengeluaran pribadi, oleh-oleh, tips (tidak termasuk paket)"
+   },
+   {
+    "id": "w26",
+    "kategori": "Lainnya",
+    "item": "Tag nama di koper",
+    "wajib": "Wajib",
+    "ket": "Dari panitia / tulis nama + No. HP"
    }
   ],
   "timeline": [
    {
     "id": "t1",
     "deadline": "2026-10-05",
-    "tugas": "Rapat tim Logistik (Kahfi, Rahma, Sidik, Akbar): bagi tugas",
+    "tugas": "Rapat tim Logistik (Kahfi, Maya, Sidik, Akbar): bagi tugas",
     "jobdesk": "Semua",
     "pic": "Kahfi",
     "status": "Belum",
@@ -1810,7 +2123,7 @@ export default {
     "deadline": "2026-10-30",
     "tugas": "Kirim pembagian kamar final ke vendor/hotel; minta titip koper sebelum check-in",
     "jobdesk": "3",
-    "pic": "Rahma",
+    "pic": "Maya",
     "status": "Belum",
     "catatan": ""
    },
@@ -1825,6 +2138,33 @@ export default {
    },
    {
     "id": "t12",
+    "deadline": "2026-10-16",
+    "tugas": "Putuskan hadiah 3 games: beli di Bogor/Bali, dihias atau tidak",
+    "jobdesk": "2",
+    "pic": "Sidik",
+    "status": "Belum",
+    "catatan": ""
+   },
+   {
+    "id": "t13",
+    "deadline": "2026-11-06",
+    "tugas": "Print cue card + rundown gala dinner; siapkan ATK, rol kabel, nomor undian & label kado",
+    "jobdesk": "1",
+    "pic": "Sidik",
+    "status": "Belum",
+    "catatan": ""
+   },
+   {
+    "id": "t14",
+    "deadline": "2026-11-10",
+    "tugas": "Hadiah 3 games dibungkus & dilabel per game (Game 1/2/3)",
+    "jobdesk": "2",
+    "pic": "Sidik",
+    "status": "Belum",
+    "catatan": ""
+   },
+   {
+    "id": "t15",
     "deadline": "2026-10-30",
     "tugas": "Ajukan reimburse belanja Logistik ke Bendahara (bawa struk)",
     "jobdesk": "1, 5",
@@ -1833,16 +2173,16 @@ export default {
     "catatan": ""
    },
    {
-    "id": "t13",
+    "id": "t16",
     "deadline": "2026-11-03",
     "tugas": "Kirim daftar bawaan & aturan bagasi ke grup (H-10)",
     "jobdesk": "4, 6",
-    "pic": "Rahma",
+    "pic": "Maya",
     "status": "Belum",
     "catatan": ""
    },
    {
-    "id": "t14",
+    "id": "t17",
     "deadline": "2026-11-06",
     "tugas": "Kumpulkan catatan kesehatan / obat rutin peserta (rahasia)",
     "jobdesk": "5",
@@ -1851,7 +2191,7 @@ export default {
     "catatan": ""
    },
    {
-    "id": "t15",
+    "id": "t18",
     "deadline": "2026-11-10",
     "tugas": "Packing & timbang barang panitia; label kartu simbolis; print HeadCount & Kamar",
     "jobdesk": "1, 2, 4",
@@ -1860,16 +2200,16 @@ export default {
     "catatan": ""
    },
    {
-    "id": "t16",
+    "id": "t19",
     "deadline": "2026-11-10",
     "tugas": "Bagikan pembagian kamar & kelompok ke grup",
     "jobdesk": "3, 7",
-    "pic": "Rahma",
+    "pic": "Maya",
     "status": "Belum",
     "catatan": ""
    },
    {
-    "id": "t17",
+    "id": "t20",
     "deadline": "2026-11-12",
     "tugas": "Reminder: kumpul CGK, web check-in, timbang koper (15 kg)",
     "jobdesk": "4, 7",
@@ -1878,7 +2218,7 @@ export default {
     "catatan": ""
    },
    {
-    "id": "t18",
+    "id": "t21",
     "deadline": "2026-11-13",
     "tugas": "Head count CGK–DPS–bus–lokasi; bagikan amplop kunci di hotel",
     "jobdesk": "3, 7",
@@ -1887,7 +2227,16 @@ export default {
     "catatan": ""
    },
    {
-    "id": "t19",
+    "id": "t22",
+    "deadline": "2026-11-13",
+    "tugas": "Setup gala dinner Jimbaran sebelum 19.00 (meja hadiah, box kado, rol kabel, props games)",
+    "jobdesk": "1, 2",
+    "pic": "Sidik",
+    "status": "Belum",
+    "catatan": ""
+   },
+   {
+    "id": "t23",
     "deadline": "2026-11-14",
     "tugas": "Head count Day 2; lepas Ameilia ke bandara ±10.00 (pesawat 12.30)",
     "jobdesk": "7",
@@ -1896,7 +2245,7 @@ export default {
     "catatan": ""
    },
    {
-    "id": "t20",
+    "id": "t24",
     "deadline": "2026-11-15",
     "tugas": "Sweeping kamar, kunci kembali, cek bagasi oleh-oleh, head count AirAsia & Lion",
     "jobdesk": "3, 4, 7",
@@ -1905,7 +2254,7 @@ export default {
     "catatan": ""
    },
    {
-    "id": "t21",
+    "id": "t25",
     "deadline": "2026-11-17",
     "tugas": "Serahkan hadiah asli di kantor + dokumentasi",
     "jobdesk": "2",
@@ -1914,7 +2263,7 @@ export default {
     "catatan": ""
    },
    {
-    "id": "t22",
+    "id": "t26",
     "deadline": "2026-11-18",
     "tugas": "Kembalikan barang pinjaman; laporan Sie Logistik ke Ketua Panitia",
     "jobdesk": "1",
@@ -2123,7 +2472,7 @@ export default {
    },
    {
     "id": "m17",
-    "nama": "Rahma Tiana Umaya (Wakil Koord.)",
+    "nama": "Rahma Tiana Umaya / Maya (Wakil Koord.)",
     "tugas": "Kamar & kunci (terutama kamar wanita); daftar bawaan peserta",
     "jobdesk": "Jobdesk 3, 6"
    },
@@ -2174,7 +2523,7 @@ export default {
    {
     "id": "f50",
     "topik": "Gala dinner Jimbaran (Day 1)",
-    "detail": "Ada company speech, fun games & doorprize + electone. Tanya Sie Acara: properti & mic; kartu hadiah simbolis dibagikan di sini.",
+    "detail": "Rundown 19.15–22.00: speech, tukar kado, 3 games, doorprize, live singer. Logistik setup sebelum 19.00 — lihat sheet Gala Dinner. Mekanisme tukar kado (peserta bawa kado?) tanya Sie Acara.",
     "status": "Belum"
    }
   ]

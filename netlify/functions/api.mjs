@@ -24,6 +24,24 @@ async function read(st, key, fallback) {
   return { data: again.data, etag: again.etag };
 }
 
+// Kalau data tersimpan masih versi Excel lama, ganti dengan data Excel terbaru.
+// Data lama disalin dulu ke "db-backup-v<versi>" supaya bisa dipulihkan.
+async function upgradeIfNeeded(st, user) {
+  const cur = await st.getWithMetadata("db", { type: "json" });
+  if (!cur || !cur.data) return;
+  const oldV = cur.data.seedVersion || 1;
+  if (oldV >= SEED.seedVersion) return;
+  await st.setJSON(`db-backup-v${oldV}`, cur.data);
+  const fresh = structuredClone(SEED);
+  fresh.rev = (cur.data.rev || 1) + 1;
+  const res = await st.setJSON("db", fresh, { onlyIfMatch: cur.etag });
+  if (res && res.modified === false) return; // sudah diperbarui oleh request lain
+  await mutate(st, "log", [], (log) => {
+    log.push({ id: Date.now().toString(36), t: new Date().toISOString(), user: "Sistem", table: "-", tableLabel: "Sistem",
+      label: `Data diperbarui dari Excel v${SEED.seedVersion}`, action: "reset", changes: [] });
+  });
+}
+
 // Baca → ubah → tulis dengan cek versi (etag). Kalau ada yang menyimpan bersamaan, ulangi.
 async function mutate(st, key, fallback, fn) {
   for (let i = 0; i < 8; i++) {
@@ -94,6 +112,8 @@ export default async (req) => {
 
   try {
     if (route === "login") return json({ ok: true });
+
+    await upgradeIfNeeded(st, user);
 
     if (route === "data" && req.method === "GET") {
       const { data } = await read(st, "db", SEED);

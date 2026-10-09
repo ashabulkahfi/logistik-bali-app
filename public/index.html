@@ -287,8 +287,8 @@ details.box[open] summary::after{content:"－"}
       <h1>Masuk ke catatan logistik</h1>
       <p>Cukup sekali. Nama kamu dipakai untuk mencatat siapa yang mengubah data.</p>
       <label class="fld"><span>Nama</span>
-        <input class="inp" id="lgName" list="teamNames" required maxlength="40" autocomplete="name" placeholder="Contoh: Rahma">
-        <datalist id="teamNames"><option>Kahfi</option><option>Rahma</option><option>Sidik</option><option>Akbar</option></datalist>
+        <input class="inp" id="lgName" list="teamNames" required maxlength="40" autocomplete="name" placeholder="Contoh: Maya">
+        <datalist id="teamNames"><option>Kahfi</option><option>Maya</option><option>Sidik</option><option>Akbar</option></datalist>
       </label>
       <label class="fld"><span>Password tim</span>
         <input class="inp" id="lgPass" type="password" required autocomplete="current-password">
@@ -318,7 +318,7 @@ details.box[open] summary::after{content:"－"}
 <script>
 /* ============ Konfigurasi ============ */
 const DEPART = "2026-11-13";
-const PIC = ["Kahfi","Rahma","Sidik","Akbar"];
+const PIC = ["Kahfi","Maya","Sidik","Akbar"];
 const PERGI = ["AirAsia 13 Nov 06.20","Cek Sie Transportasi"];
 const PULANG = ["AirAsia 15 Nov 16.10","Lion Air 15 Nov 17.15","AirAsia 14 Nov 12.30","Super Air Jet 15 Nov 16.40 (SUB)","Belum ada data"];
 const JATAH = v => !v ? "" : /airasia/i.test(v) ? 15 : /lion|super/i.test(v) ? 10 : "";
@@ -337,6 +337,7 @@ const IC = {
   phone:'<path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2z"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
   plus:'<path d="M12 5v14M5 12h14"/>', search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>', down:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', out:'<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
   copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'
@@ -350,6 +351,7 @@ const VIEWS = [
   {k:"headcount",l:"Head count",i:"count",nav:1},
   {k:"bagasi",l:"Bagasi",i:"bag"},
   {k:"properti",l:"Properti",i:"box"},
+  {k:"gala",l:"Gala dinner",i:"mic"},
   {k:"hadiah",l:"Hadiah",i:"gift"},
   {k:"belanja",l:"Belanja",i:"cart"},
   {k:"bawaan",l:"Bawaan peserta",i:"pack"},
@@ -485,7 +487,7 @@ const DEF = {
       {k:"kegunaan",l:"Kegunaan",hm:1},
       {k:"qty",l:"Qty",t:"number",num:1},
       {k:"satuan",l:"Satuan",hm:1},
-      {k:"sumber",l:"Sumber",t:"select",o:["Bawa dari Bogor","Beli di Bali","Beli Dari Jkt","Vendor/Venue","Pinjam","Cek Sie Acara","Cek Sie Dokumentasi"],hm:1},
+      {k:"sumber",l:"Sumber",t:"select",o:["Bawa dari Bogor","Beli di Bali","Beli dari JKT","Vendor/Venue","Pinjam","Cek Sie Acara","Cek Sie Dokumentasi"],hm:1},
       {k:"pic",l:"PIC",t:"select",o:["",...PIC]},
       {k:"harga",l:"Harga satuan",t:"number",num:1,hm:1,fmt:v=>v?rp(num(v)):""},
       {k:"total",l:"Total",t:"calc",num:1,hm:1,f:r=>num(r.qty)*num(r.harga)?rp(num(r.qty)*num(r.harga)):"–"},
@@ -517,10 +519,11 @@ const DEF = {
       {k:"catatan",l:"Catatan",t:"area",hide:1},
     ]},
   belanja: { label:"Belanja", prefix:"b", title:"item",
+    filter:{k:"kategori",l:"Semua kategori"},
     desc:"Hanya barang ini yang dibeli. Air mineral, tisu, payung & hand sanitizer sudah dari vendor. Simpan struk untuk reimburse ke Bendahara.",
     cols:[
       {k:"item",l:"Item",main:1,req:1},
-      {k:"kategori",l:"Kategori",t:"select",o:["P3K","Games","Lainnya"],pill:1},
+      {k:"kategori",l:"Kategori",t:"select",o:["P3K","Games","Gala dinner","Lainnya"],pill:1},
       {k:"qty",l:"Qty",t:"number",num:1},
       {k:"satuan",l:"Satuan",hm:1},
       {k:"harga",l:"Harga satuan",t:"number",num:1,fmt:v=>v?rp(num(v)):""},
@@ -528,10 +531,10 @@ const DEF = {
       {k:"sudah",l:"Sudah dibeli",t:"check",on:"✓"},
       {k:"catatan",l:"Catatan",hide:1},
     ]},
-  bawaan: { label:"Bawaan peserta", prefix:"w", title:"item",
+  bawaan: { label:"Bawaan peserta", prefix:"w", title:"item", filter:{k:"kategori",l:"Semua kategori"},
     desc:"Dikirim ke grup H-10 (Selasa, 3 Nov 2026). Disesuaikan dengan itinerary: beach club, pantai, Penglipuran, air terjun, gala dinner.",
     cols:[
-      {k:"kategori",l:"Kategori",t:"select",o:["ATURAN","Pakaian","Perlengkapan","Dokumen","Obat pribadi","Lainnya"],pill:1},
+      {k:"kategori",l:"Kategori",t:"select",o:["ATURAN","Dokumen","Pakaian","Ibadah","Kesehatan","Lainnya"],pill:1},
       {k:"item",l:"Item",main:1,req:1,t:"area"},
       {k:"wajib",l:"Wajib?",t:"select",o:["","Wajib","Opsional"]},
       {k:"ket",l:"Keterangan",hm:1},
@@ -548,6 +551,18 @@ const DEF = {
       {k:"pic",l:"PIC",t:"select",o:["",...PIC]},
       {k:"status",l:"Status",t:"select",o:["Belum","Proses","Selesai"],quick:1},
       {k:"catatan",l:"Catatan",t:"area",hide:1},
+    ]},
+  gala: { label:"Gala dinner", prefix:"g", title:"tugas", sort:(a,b)=>galaOrder(a)-galaOrder(b),
+    desc:"Jimbaran, Day 1 (Jumat 13 Nov) 19.15–22.00. Logistik setup sebelum 19.00. Centang Siap saat persiapan dan di hari H.",
+    filter:{k:"pic",l:"Semua PIC"},
+    rowClass:r=>r.siap?"done":"",
+    cols:[
+      {k:"waktu",l:"Waktu"},
+      {k:"segmen",l:"Segmen",pill:1},
+      {k:"tugas",l:"Tugas / kebutuhan",main:1,req:1,t:"area"},
+      {k:"pic",l:"PIC",t:"select",o:["",...PIC]},
+      {k:"siap",l:"Siap",t:"check",on:"✓"},
+      {k:"catatan",l:"Catatan",t:"area",hm:1},
     ]},
   kontak: { label:"Kontak", prefix:"c", title:"pihak",
     desc:"Lengkapi nomor HP. Tekan WA untuk langsung chat.",
@@ -595,7 +610,7 @@ function cell(key, c, r) {
     return `<select class="qs ${slug(v)}" data-act="quick" data-t="${key}" data-id="${esc(r.id)}" data-k="${c.k}" aria-label="${esc(c.l)}">${opts.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
   }
   if (c.t === "tel" && v) { const w = waLink(v); return `<span class="tel"><a href="tel:${esc(v)}">${esc(v)}</a>${w?`<a class="wa" href="${w}" target="_blank" rel="noopener">WA</a>`:""}</span>`; }
-  if (c.pill && v) return `<span class="pill ${v==="DTK"||v==="P3K"||v==="ATURAN"?"lag":"fr"}">${esc(v)}</span>`;
+  if (c.pill && v) return `<span class="pill ${["DTK","P3K","ATURAN","Setup venue","Dokumen"].includes(v)?"lag":"fr"}">${esc(v)}</span>`;
   if (c.fmt) return esc(c.fmt(v));
   return esc(v);
 }
@@ -688,6 +703,7 @@ function vRingkasan() {
       </div>
       <h3 class="sec">Masih berjalan</h3>
       <div class="box">
+        <div class="zero"><span>Persiapan gala dinner siap</span><button class="btn sm" data-act="go" data-v="gala" style="margin-left:auto">Lihat</button><b style="margin-left:6px">${T("gala").filter(r=>r.siap).length}/${T("gala").length}</b></div>
         <div class="zero"><span>Hadiah & souvenir belum diserahkan</span><b>${s.hadiahBelum}</b></div>
         <div class="zero"><span>Belanja Logistik (${s.belanjaDone}/${s.belanjaN} dibeli)</span><b style="font-size:16px">${rp(s.belanja)}</b></div>
       </div>
@@ -828,6 +844,15 @@ function vProperti() {
   const ready = R.filter(r => ["Siap","Dibawa","Terpasang","Dikembalikan"].includes(r.status)).length;
   return vSimple("properti", `<div class="chips"><span class="chip"><b>${ready}/${R.length}</b> siap</span><span class="chip">Total <b>${rp(tot)}</b></span></div>`);
 }
+function galaOrder(r) {
+  const t = String(r.waktu||"");
+  if (/sebelum/i.test(t)) return 0;
+  const m = t.match(/(\d{1,2})[.:](\d{2})/); return m ? +m[1]*60 + +m[2] : 9999;
+}
+function vGala() {
+  const R = T("gala"); const ok = R.filter(r => r.siap).length;
+  return vSimple("gala", `<div class="chips"><span class="chip ${ok===R.length&&R.length?"good":""}">Siap <b>${ok}/${R.length}</b></span>${PIC.map(p=>`<span class="chip">${p} <b>${R.filter(r=>r.pic===p&&!r.siap).length}</b> belum siap</span>`).join("")}<span class="chip warn">Mekanisme tukar kado: tanya Sie Acara</span></div>`);
+}
 function vBelanja() {
   const R = T("belanja"); const tot = R.reduce((s,r)=>s+num(r.qty)*num(r.harga),0);
   return vSimple("belanja", `<div class="chips"><span class="chip"><b>${R.filter(r=>r.sudah).length}/${R.length}</b> dibeli</span><span class="chip">Total <b>${rp(tot)}</b></span><span class="chip warn">Ajukan reimburse ke Ameilia / Hanna</span></div>`);
@@ -855,7 +880,7 @@ function logItem(e) {
   const t = new Date(e.t);
   const time = t.toLocaleString("id-ID",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
   return `<div class="li"><span class="av">${esc(initials(e.user))}</span><div class="t">
-    <b style="font-weight:600"><strong>${esc(e.user)}</strong> ${ACT[e.action]||e.action} ${esc(e.tableLabel||e.table)}: ${esc(e.label)}</b>
+    <b style="font-weight:600">${e.action==="reset" ? `<strong>${esc(e.user)}</strong>: ${esc(e.label)}` : `<strong>${esc(e.user)}</strong> ${ACT[e.action]||e.action} ${esc(e.tableLabel||e.table)}: ${esc(e.label)}`}</b>
     ${(e.changes||[]).map(c => `<div class="ch">${esc(c.f)}: ${c.from?`<s>${esc(c.from)}</s> → `:""}<ins>${c.to?esc(c.to):"(dikosongkan)"}</ins></div>`).join("")}
     <span>${esc(time)}</span></div></div>`;
 }
@@ -883,7 +908,7 @@ function vLog() {
 
 const RENDER = {
   ringkasan: vRingkasan, peserta: () => vSimple("peserta"), kamar: vKamar, headcount: vHeadcount, bagasi: vBagasi,
-  properti: vProperti, hadiah: vHadiah, belanja: vBelanja, bawaan: vBawaan, timeline: vTimeline,
+  properti: vProperti, gala: vGala, hadiah: vHadiah, belanja: vBelanja, bawaan: vBawaan, timeline: vTimeline,
   kontak: () => vSimple("kontak"), log: vLog,
 };
 
@@ -894,7 +919,7 @@ function render() {
   $("#hTag").textContent = d > 0 ? "H-" + d : d === 0 ? "Hari H" : "H+" + (-d);
   $("#meBtn").textContent = initials(S.user);
   const navBtn = v => `<button class="${S.view===v.k?"on":""}" data-act="go" data-v="${v.k}">${icon(v.i)}<span>${v.l}</span></button>`;
-  $("#side").innerHTML = VIEWS.slice(0,4).map(navBtn).join("") + "<hr>" + VIEWS.slice(4,11).map(navBtn).join("") + "<hr>" + navBtn(VIEWS[11]);
+  $("#side").innerHTML = VIEWS.slice(0,4).map(navBtn).join("") + "<hr>" + VIEWS.slice(4,-1).map(navBtn).join("") + "<hr>" + navBtn(VIEWS[VIEWS.length-1]);
   const inMore = !VIEWS.find(v => v.k === S.view)?.nav;
   $("#bnav").innerHTML = VIEWS.filter(v => v.nav).map(navBtn).join("") + `<button class="${inMore?"on":""}" data-act="more">${icon("more")}<span>${inMore?esc(VIEWS.find(v=>v.k===S.view)?.l.split(" ")[0]||"Lainnya"):"Lainnya"}</span></button>`;
 
@@ -1099,7 +1124,7 @@ async function exportXlsx() {
     const wb = XLSX.utils.book_new();
     const add = (name, rows) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), name.slice(0,31));
     const strip = h => String(h).replace(/<[^>]+>/g, "");
-    ["peserta","bagasi","properti","hadiah","souvenir","belanja","bawaan","timeline","kontak","konfirmasi"].forEach(k => {
+    ["peserta","bagasi","properti","gala","hadiah","souvenir","belanja","bawaan","timeline","kontak","konfirmasi"].forEach(k => {
       const cols = DEF[k].cols;
       add(DEF[k].label, [cols.map(c => c.l), ...rowsOf(k).map(r => cols.map(c => c.t === "calc" ? strip(c.f(r)) : (r[c.k] ?? "")))]);
     });

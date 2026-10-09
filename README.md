@@ -2,7 +2,12 @@
 
 Aplikasi web ringan pengganti file `Logistik_Akomodasi_Gathering_Bali_v3.xlsx`.
 Data tersimpan di **Netlify Blobs** (bawaan Netlify, gratis, tanpa database terpisah).
-Data awal sudah diisi otomatis dari Excel saat aplikasi pertama kali dibuka.
+Data awal sudah diisi otomatis dari Excel **v4** saat aplikasi pertama kali dibuka.
+
+## Update ke data Excel baru
+Situs yang sebelumnya berisi data v3 akan otomatis diganti ke data v4 saat pertama dibuka setelah deploy
+(tercatat di Riwayat update sebagai "Sistem: Data diperbarui dari Excel v4").
+Data lama tidak hilang: disalin ke blob `db-backup-v1` di Netlify Blobs.
 
 ## Isi folder
 - `public/index.html` — seluruh tampilan aplikasi (1 file, tanpa framework)
@@ -40,7 +45,7 @@ Semua anggota tim otomatis diminta login lagi.
 ## Fitur
 - Ringkasan (pengganti sheet Panduan): hitung mundur, rekap otomatis, cek "harus nol", tugas terdekat, perlu dikonfirmasi, aktivitas terbaru
 - Peserta, Kamar (kartu per kamar + centang kunci), Head count per titik (✓ / X / –), Bagasi (status overbagasi otomatis),
-  Properti, Hadiah & souvenir, Belanja, Bawaan peserta (+ tombol salin ke grup WA), Timeline, Kontak (tombol telepon & WA)
+  Properti, Gala dinner (checklist per segmen), Hadiah & souvenir, Belanja, Bawaan peserta (+ tombol salin ke grup WA), Timeline, Kontak (tombol telepon & WA)
 - Simpan otomatis, beberapa orang bisa edit bersamaan tanpa saling menimpa (per kolom)
 - Data tersinkron otomatis tiap 15 detik ke semua HP
 - Menu akun → **Unduh semua data (Excel)** untuk backup / laporan
