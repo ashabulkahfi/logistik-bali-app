@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0B6F6A">
+<meta name="author" content="AK-DEV">
 <title>Logistik Bali — Gathering DTK x PERKOP</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧳</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -332,6 +333,15 @@ select.qs.s-tidak{background-color:var(--soft);color:var(--muted)}
 .win-card.noimg b{font-size:clamp(26px,8vw,40px)}
 .winners .li img{width:40px;height:40px;border-radius:10px;object-fit:cover;background:#fff;flex:none}
 @media (prefers-reduced-motion:reduce){.win-card,.stage-status .suspense,.stage.tense .pointer{animation:none}}
+.credit{display:block;text-align:center;font-size:12px;color:var(--muted);letter-spacing:.03em;padding:18px 0 4px}
+.credit b{font:800 12px var(--display);letter-spacing:.08em;color:var(--ink)}
+#login{align-content:center}
+#login .credit{margin-top:6px}
+.main-credit{padding-top:10px}
+@media (min-width:960px){.main-credit{display:none}}
+.side .credit{text-align:left;padding:16px 12px 0}
+#guest .credit,#guest .credit b{color:#A9C7D6}
+#guest .credit b{color:#F6C453}
 </style>
 </head>
 <body>
@@ -361,6 +371,7 @@ select.qs.s-tidak{background-color:var(--soft);color:var(--muted)}
       <button class="btn pri block" id="lgBtn" type="submit">Masuk</button>
     </div>
   </form>
+  <span class="credit">by <b>AK-DEV</b></span>
 </section>
 
 <!-- APP -->
@@ -1222,7 +1233,8 @@ function bootGuest() {
     <div class="g-head"><div><b>Doorprize Gala Dinner</b><small>Gathering DTK x PERKOP, Jimbaran</small></div>${loggedIn?`<a href="/" onclick="localStorage.setItem('lg_view','spin')">Panel admin</a>`:""}</div>
     <div id="stageSlot"></div>
     <h3 class="sec">Pemenang</h3>
-    <div class="box winners" data-winners="valid"></div>`;
+    <div class="box winners" data-winners="valid"></div>
+    <span class="credit">by <b>AK-DEV</b></span>`;
   mountStage($("#stageSlot"));
   setInterval(() => drawStage(true), 1000);
 }
@@ -1354,7 +1366,7 @@ function render() {
   $("#hTag").textContent = d > 0 ? "H-" + d : d === 0 ? "Hari H" : "H+" + (-d);
   $("#meBtn").textContent = initials(S.user);
   const navBtn = v => `<button class="${S.view===v.k?"on":""}" data-act="go" data-v="${v.k}">${icon(v.i)}<span>${v.l}</span></button>`;
-  $("#side").innerHTML = VIEWS.slice(0,4).map(navBtn).join("") + "<hr>" + VIEWS.slice(4,-1).map(navBtn).join("") + "<hr>" + navBtn(VIEWS[VIEWS.length-1]);
+  $("#side").innerHTML = VIEWS.slice(0,4).map(navBtn).join("") + "<hr>" + VIEWS.slice(4,-1).map(navBtn).join("") + "<hr>" + navBtn(VIEWS[VIEWS.length-1]) + '<span class="credit">by <b>AK-DEV</b></span>';
   const inMore = !VIEWS.find(v => v.k === S.view)?.nav;
   $("#bnav").innerHTML = VIEWS.filter(v => v.nav).map(navBtn).join("") + `<button class="${inMore?"on":""}" data-act="more">${icon("more")}<span>${inMore?esc(VIEWS.find(v=>v.k===S.view)?.l.split(" ")[0]||"Lainnya"):"Lainnya"}</span></button>`;
 
@@ -1362,7 +1374,7 @@ function render() {
   const a = document.activeElement; let focus = null;
   if (a && a.dataset && a.dataset.act === "search") focus = { t:a.dataset.t, s:a.selectionStart };
   const sx = $("#cps")?.scrollLeft;
-  $("#main").innerHTML = (RENDER[S.view] || vRingkasan)();
+  $("#main").innerHTML = (RENDER[S.view] || vRingkasan)() + '<div class="main-credit"><span class="credit">by <b>AK-DEV</b></span></div>';
   if (S.view === "spin") {
     mountStage($("#stageSlot")); renderSpinAdmin(true);
     if (!SP.refreshed) { SP.refreshed = true; api("spin/refresh", { method:"POST", body:"{}" }).then(applySpin).catch(() => {}); }
