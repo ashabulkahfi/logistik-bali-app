@@ -342,6 +342,20 @@ select.qs.s-tidak{background-color:var(--soft);color:var(--muted)}
 .side .credit{text-align:left;padding:16px 12px 0}
 #guest .credit,#guest .credit b{color:#A9C7D6}
 #guest .credit b{color:#F6C453}
+
+.room li.mem{border-radius:8px;margin:0 -6px;padding:5px 6px;touch-action:auto;user-select:none;-webkit-user-select:none}
+.room li.mem:hover,.noroom li.mem:hover{background:var(--soft)}
+.grip{color:var(--muted);font-size:13px;letter-spacing:-3px;padding:6px 6px 6px 0;cursor:grab;touch-action:none;line-height:1}
+.room li.empty-room{cursor:default;font-size:13px}
+.room li.addmem{padding:6px 0 2px;cursor:default}
+.noroom ul.plain{list-style:none;margin:0;padding:6px 0}
+.noroom li.mem{display:flex;align-items:center;gap:8px;padding:8px 6px;cursor:pointer;border-radius:8px}
+.noroom li.mem .nm{flex:1}
+.drag-src{opacity:.35}
+body.dragging{cursor:grabbing;user-select:none;-webkit-user-select:none}
+body.dragging [data-drop]{transition:box-shadow .12s,border-color .12s}
+.drop-hover{border-color:var(--lagoon)!important;box-shadow:0 0 0 3px var(--lagoon-bg)}
+.drag-ghost{position:fixed;left:0;top:0;z-index:80;pointer-events:none;display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:999px;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 </style>
 </head>
 <body>
@@ -844,8 +858,8 @@ function vKamar() {
   const used = rooms.filter(r => r.members.length);
   const noRoom = T("peserta").filter(p => !p.kamar);
   const kt = used.filter(r => r.kunciTerima).length, kk = used.filter(r => r.kunciKembali).length;
-  const jk = j => j==="Pria"?'<span class="jk p">P</span>':j==="Wanita"?'<span class="jk w">W</span>':'<span class="jk x">–</span>';
-  return header("Pembagian kamar", "Brits Legian Hotel. Pindah kamar lewat data peserta. Centang kunci saat check-in (Day 1 ±22.30) dan check-out (Day 3, 08.00–09.00).") + `
+  const mem = m => `<li class="mem" data-act="member" data-id="${esc(m.id)}" data-pid="${esc(m.id)}"><span class="grip" aria-hidden="true">⋮⋮</span>${jkBadge(m.jk)}<span class="nm">${esc(m.nama)}</span><small class="muted">${esc(m.divisi)}</small></li>`;
+  return header("Pembagian kamar", "Seret nama (pegang ⋮⋮) ke kamar lain untuk pindah, atau ketuk nama untuk pindah/tukar lewat pilihan. Centang kunci saat check-in (Day 1 ±22.30) dan check-out (Day 3, 08.00-09.00).") + `
   <div class="chips">
     <span class="chip"><b>${used.length}</b> kamar terpakai</span>
     <span class="chip ${noRoom.length?"bad":"good"}"><b>${noRoom.length}</b> belum dapat kamar</span>
@@ -854,18 +868,110 @@ function vKamar() {
     <span class="chip ${kk===used.length?"good":""}">Kunci kembali <b>${kk}/${used.length}</b></span>
   </div>
   <div class="rooms">${rooms.map(r => `
-    <div class="room ${r.problem?"bad":""}">
+    <div class="room ${r.problem?"bad":""}" data-drop="${esc(r.no)}">
       <button class="room-h" data-act="room" data-no="${esc(r.no)}"><b>${esc(r.no)}</b>${r.tipe?`<span class="pill">${esc(r.tipe)}</span>`:""}
         <span class="no">${r.noHotel?`No. hotel<br><b style="font-size:15px;color:var(--ink)">${esc(r.noHotel)}</b>`:"No. hotel belum diisi"}</span></button>
       ${r.problem?`<div style="padding:6px 14px 0"><span class="pill hib">${esc(r.problem)}</span></div>`:""}
-      <ul>${r.members.length ? r.members.map(m => `<li data-act="open" data-t="peserta" data-id="${esc(m.id)}">${jk(m.jk)}<span class="nm">${esc(m.nama)}</span><small class="muted">${esc(m.divisi)}</small></li>`).join("") : `<li class="muted">Kosong</li>`}</ul>
+      <ul>${r.members.map(mem).join("")}${r.members.length ? "" : `<li class="muted empty-room">Kosong, seret nama ke sini</li>`}
+        <li class="addmem"><button class="btn sm" data-act="roomAdd" data-no="${esc(r.no)}">${icon("plus")} Tambah penghuni</button></li></ul>
       <div class="keys">
         <button class="key ${r.kunciTerima?"on":""}" data-act="key" data-no="${esc(r.no)}" data-k="kunciTerima">${r.kunciTerima?"✓ ":""}Kunci diterima</button>
         <button class="key ${r.kunciKembali?"on":""}" data-act="key" data-no="${esc(r.no)}" data-k="kunciKembali">${r.kunciKembali?"✓ ":""}Kunci kembali</button>
       </div>
     </div>`).join("")}
   </div>
-  ${noRoom.length ? `<h3 class="sec">Belum dapat kamar</h3><div class="box">${noRoom.map(p=>`<div class="li" data-act="open" data-t="peserta" data-id="${esc(p.id)}" style="cursor:pointer">${jk(p.jk)}<div class="t"><b>${esc(p.nama)}</b><span>${esc(p.divisi)}</span></div></div>`).join("")}</div>` : ""}`;
+  <h3 class="sec">Belum dapat kamar</h3>
+  <div class="box noroom" data-drop="">${noRoom.length ? `<ul class="plain">${noRoom.map(mem).join("")}</ul>` : `<div class="empty">Semua sudah dapat kamar. Seret nama ke sini untuk mengeluarkan dari kamar.</div>`}</div>`;
+}
+const jkBadge = j => j==="Pria"?'<span class="jk p">P</span>':j==="Wanita"?'<span class="jk w">W</span>':'<span class="jk x">–</span>';
+const roomNos = () => { const n = roomList().map(r => r.no); const max = Math.max(0, ...n.map(Number).filter(x => !isNaN(x))); return [...n, String(max + 1)]; };
+const roomOpts = (cur) => roomNos().map(n => `<option value="${esc(n)}" ${n===cur?"selected":""}>Kamar ${esc(n)}${roomList().some(r=>r.no===n) ? ` (${roomList().find(r=>r.no===n).members.length} org)` : " (kamar baru)"}</option>`).join("");
+const pesertaOpts = (excludeId) => T("peserta").filter(p => p.id !== excludeId).map(p => `<option value="${esc(p.id)}">${esc(p.nama)}${p.kamar ? ` (kamar ${esc(p.kamar)})` : " (belum dapat kamar)"}</option>`).join("");
+
+function moveTo(pid, no) {
+  const p = byId("peserta", pid); if (!p || (p.kamar || "") === (no || "")) return;
+  push({ op:"update", table:"peserta", id:pid, changes:{ kamar: no }, label:p.nama, tableLabel:"Kamar", fieldLabels:{ kamar:"Kamar" } });
+  toast(no ? `${p.nama} pindah ke kamar ${no}` : `${p.nama} dikeluarkan dari kamar`);
+}
+function swapRooms(a, b) {
+  const pa = byId("peserta", a), pb = byId("peserta", b); if (!pa || !pb) return;
+  const ka = pa.kamar || "", kb = pb.kamar || "";
+  push({ op:"update", table:"peserta", id:a, changes:{ kamar: kb }, label:pa.nama, tableLabel:"Kamar", fieldLabels:{ kamar:"Kamar" } },
+       { op:"update", table:"peserta", id:b, changes:{ kamar: ka }, label:pb.nama, tableLabel:"Kamar", fieldLabels:{ kamar:"Kamar" } });
+  toast(`${pa.nama} dan ${pb.nama} bertukar kamar`);
+}
+function memberSheet(pid) {
+  const p = byId("peserta", pid); if (!p) return;
+  sheet(p.nama, `
+    <p class="muted" style="margin:0 0 12px">${esc(p.divisi)}, ${esc(p.jk)}. Sekarang: <b>${p.kamar ? "kamar " + esc(p.kamar) : "belum dapat kamar"}</b></p>
+    <label class="fld"><span>Pindah ke kamar</span><select class="inp" id="mvRoom"><option value="">Keluarkan dari kamar</option>${roomOpts(p.kamar || "")}</select></label>
+    <div class="row"><button class="btn pri" data-act="mvGo" data-id="${esc(pid)}">Pindahkan</button></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+    <label class="fld"><span>Atau tukar kamar dengan</span><select class="inp" id="swWith"><option value="">Pilih peserta</option>${pesertaOpts(pid)}</select></label>
+    <div class="row"><button class="btn" data-act="swGo" data-id="${esc(pid)}">Tukar kamar</button></div>`,
+    `<button class="btn" data-act="open" data-t="peserta" data-id="${esc(pid)}">Data peserta lengkap</button><button class="btn" data-act="close">Tutup</button>`);
+}
+function roomAddSheet(no) {
+  sheet(`Tambah penghuni kamar ${no}`, `
+    <label class="fld"><span>Pilih dari peserta</span><select class="inp" id="addWho"><option value="">Pilih peserta</option>${T("peserta").filter(p => p.kamar !== no).map(p => `<option value="${esc(p.id)}">${esc(p.nama)}${p.kamar ? ` (sekarang kamar ${esc(p.kamar)})` : " (belum dapat kamar)"}</option>`).join("")}</select></label>
+    <p class="muted" style="font-size:13px;margin:0">Peserta yang dipilih pindah dari kamar lamanya ke kamar ${esc(no)}.</p>`,
+    `<button class="btn" data-act="close">Batal</button><button class="btn pri" data-act="addGo" data-no="${esc(no)}">Masukkan ke kamar ${esc(no)}</button>`, true);
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const a = b.dataset.act;
+  if (a === "member") { if (DRAG.justDropped) return; memberSheet(b.dataset.id); }
+  if (a === "roomAdd") roomAddSheet(b.dataset.no);
+  if (a === "mvGo") { moveTo(b.dataset.id, $("#mvRoom").value); closeLayer(); }
+  if (a === "swGo") { const w = $("#swWith").value; if (!w) return toast("Pilih peserta dulu"); swapRooms(b.dataset.id, w); closeLayer(); }
+  if (a === "addGo") { const w = $("#addWho").value; if (!w) return toast("Pilih peserta dulu"); moveTo(w, b.dataset.no); closeLayer(); }
+});
+
+/* ---- seret & lepas nama antar kamar (mouse dan layar sentuh) ---- */
+const DRAG = { on:false, pid:null, ghost:null, x0:0, y0:0, started:false, over:null, raf:0, y:0, justDropped:false };
+document.addEventListener("pointerdown", e => {
+  const li = e.target.closest("li.mem"); if (!li || e.button > 0) return;
+  const viaGrip = !!e.target.closest(".grip");
+  if (e.pointerType !== "mouse" && !viaGrip) return;   // di HP hanya lewat pegangan ⋮⋮ supaya scroll tetap normal
+  Object.assign(DRAG, { on:true, pid:li.dataset.pid, x0:e.clientX, y0:e.clientY, started:false, src:li });
+  if (viaGrip) e.preventDefault();
+});
+document.addEventListener("pointermove", e => {
+  if (!DRAG.on) return;
+  if (!DRAG.started) {
+    if (Math.hypot(e.clientX - DRAG.x0, e.clientY - DRAG.y0) < 6) return;
+    DRAG.started = true;
+    const p = byId("peserta", DRAG.pid);
+    DRAG.ghost = document.createElement("div"); DRAG.ghost.className = "drag-ghost";
+    DRAG.ghost.innerHTML = `${jkBadge(p?.jk)}<span>${esc(p?.nama || "")}</span>`;
+    document.body.appendChild(DRAG.ghost); document.body.classList.add("dragging");
+    DRAG.src?.classList.add("drag-src");
+    autoScroll();
+  }
+  e.preventDefault();
+  DRAG.y = e.clientY;
+  DRAG.ghost.style.transform = `translate(${e.clientX + 10}px, ${e.clientY - 18}px)`;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const tgt = el && el.closest("[data-drop]");
+  if (tgt !== DRAG.over) { DRAG.over?.classList.remove("drop-hover"); DRAG.over = tgt; tgt?.classList.add("drop-hover"); }
+}, { passive:false });
+function endDrag(drop) {
+  if (!DRAG.on) return;
+  const { started, over, pid } = DRAG;
+  DRAG.on = false; cancelAnimationFrame(DRAG.raf);
+  DRAG.ghost?.remove(); DRAG.ghost = null; over?.classList.remove("drop-hover"); DRAG.over = null;
+  document.body.classList.remove("dragging"); DRAG.src?.classList.remove("drag-src");
+  if (started) { DRAG.justDropped = true; setTimeout(() => DRAG.justDropped = false, 50); }
+  if (started && drop && over) moveTo(pid, over.dataset.drop);
+}
+document.addEventListener("pointerup", () => endDrag(true));
+document.addEventListener("pointercancel", () => endDrag(false));
+function autoScroll() {
+  if (!DRAG.on) return;
+  const m = 90, h = window.innerHeight;
+  if (DRAG.y && DRAG.y < m) window.scrollBy(0, -Math.ceil((m - DRAG.y) / 6));
+  else if (DRAG.y > h - m) window.scrollBy(0, Math.ceil((DRAG.y - (h - m)) / 6));
+  DRAG.raf = requestAnimationFrame(autoScroll);
 }
 
 const HC_V = [{v:"✓",c:"v-ada",l:"Ada"},{v:"X",c:"v-x",l:"Belum / hilang"},{v:"–",c:"v-skip",l:"Tidak ikut titik ini"}];

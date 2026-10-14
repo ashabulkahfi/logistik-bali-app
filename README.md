@@ -77,3 +77,10 @@ curl -X POST https://NAMA-SITE.netlify.app/api/reset \
   Bisa diubah di menu Peserta atau di panel Spinwheel. Hanya yang "Ya" yang masuk roda.
 - Menu Hadiah: buka hadiah, tekan "Pilih foto" (bisa langsung kamera HP), lalu Simpan perubahan.
   Foto dikecilkan otomatis di HP sebelum diunggah. Foto muncul saat hadiah diumumkan dan di kartu pemenang.
+
+### Pindah kamar
+- Menu Kamar: seret nama ke kamar lain (di laptop seret namanya, di HP tahan pegangan ⋮⋮ di kiri nama).
+  Bawa ke tepi atas/bawah layar untuk menggulir. Lepas di kotak "Belum dapat kamar" untuk mengeluarkan dari kamar.
+- Ketuk nama untuk pindah lewat pilihan kamar, atau tukar kamar dengan peserta lain.
+- "Tambah penghuni" di tiap kamar memilih dari daftar Peserta, tidak perlu mengetik nama.
+- Semua pindahan tercatat di Riwayat update.
