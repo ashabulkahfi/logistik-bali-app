@@ -350,12 +350,11 @@ select.qs.s-tidak{background-color:var(--soft);color:var(--muted)}
     <div class="perf"></div>
     <div class="pass-body">
       <h1>Masuk ke catatan logistik</h1>
-      <p>Cukup sekali. Nama kamu dipakai untuk mencatat siapa yang mengubah data.</p>
-      <label class="fld"><span>Nama</span>
-        <input class="inp" id="lgName" list="teamNames" required maxlength="40" autocomplete="name" placeholder="Contoh: Maya">
-        <datalist id="teamNames"><option>Kahfi</option><option>Maya</option><option>Sidik</option><option>Akbar</option></datalist>
+      <p>Pakai akun masing-masing dari admin Logistik. Cukup sekali di HP ini.</p>
+      <label class="fld"><span>Nama pengguna</span>
+        <input class="inp" id="lgName" required maxlength="30" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Contoh: maya">
       </label>
-      <label class="fld"><span>Password tim</span>
+      <label class="fld"><span>Password</span>
         <input class="inp" id="lgPass" type="password" required autocomplete="current-password">
       </label>
       <div class="err" id="lgErr"></div>
@@ -405,6 +404,7 @@ const IC = {
   more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
   mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
   wheel:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/>',
   plus:'<path d="M12 5v14M5 12h14"/>', search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>', down:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', out:'<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
   copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'
@@ -447,7 +447,8 @@ const waLink = hp => { let d = String(hp||"").replace(/\D/g,""); if (!d) return 
 /* ============ State ============ */
 const S = {
   user: localStorage.getItem("lg_user") || "",
-  pass: localStorage.getItem("lg_pass") || "",
+  token: localStorage.getItem("lg_token") || "",
+  me: null, accounts: {},
   db: null, view: localStorage.getItem("lg_view") || "ringkasan",
   q: {}, f: {}, hcCp: +(localStorage.getItem("lg_cp") || 0), hcMissing: false,
   queue: [], flushT: null, sending: false, offline: false, log: null, logF: {u:"",t:""}
@@ -457,7 +458,7 @@ const byId = (k, id) => T(k).find(r => r.id === id);
 
 /* ============ API ============ */
 async function api(path, opt = {}) {
-  const r = await fetch("/api/" + path, { ...opt, headers: { "content-type":"application/json", "x-user": encodeURIComponent(S.user), "x-pass": S.pass } });
+  const r = await fetch("/api/" + path, { ...opt, headers: { "content-type":"application/json", "x-token": S.token } });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) { const e = new Error(d.error || "Gagal terhubung ke server"); e.status = r.status; throw e; }
   return d;
@@ -473,7 +474,7 @@ async function load(force) {
     if (d.unchanged) { if (S.offline) { S.offline = false; setSync("", "Tersimpan"); } return; }
     S.db = d; S.offline = false; setSync("", "Tersimpan"); render();
   } catch (e) {
-    if (e.status === 401) return logout("Password tim berubah. Silakan masuk lagi.");
+    if (e.status === 401) return logout("Sesi berakhir. Silakan masuk lagi.");
     S.offline = true; setSync("off", "Offline");
   }
 }
@@ -504,7 +505,7 @@ async function flush() {
     if (S.afterFlush) { const f = S.afterFlush; S.afterFlush = null; f(); }
   } catch (e) {
     S.sending = false;
-    if (e.status === 401) return logout("Password tim berubah. Silakan masuk lagi.");
+    if (e.status === 401) return logout("Sesi berakhir. Silakan masuk lagi.");
     if (e.status && e.status < 500) { toast(e.message); load(true); return; }
     S.queue.unshift(...ops); S.offline = true; setSync("off", "Offline, mencoba lagi");
     clearTimeout(S.flushT); S.flushT = setTimeout(flush, 5000);
@@ -524,6 +525,7 @@ const DEF = {
       {k:"divisi",l:"Divisi",t:"select",o:["DTK","PERKOP"],pill:1},
       {k:"status",l:"Status",t:"select",o:["Pegawai","Keluarga"],hm:1},
       {k:"doorprize",l:"Ikut doorprize",t:"select",o:["Ya","Tidak"],quick:1,def:r=>r.status==="Keluarga"?"Tidak":"Ya"},
+      {k:"akses",l:"Akses aplikasi",t:"calc",f:r=>{ const a = S.accounts[r.id]; return a ? `<span class="pill ${a.role==="Admin"?"hib":"lag"}">${a.role}</span> <small class="muted">${esc(a.username)}</small>` : `<span class="muted">–</span>`; }},
       {k:"jk",l:"JK",t:"select",o:["Pria","Wanita","-"]},
       {k:"pergi",l:"Pesawat pergi",t:"select",o:PERGI,hm:1},
       {k:"pulang",l:"Pesawat pulang",t:"select",o:PULANG},
@@ -980,7 +982,7 @@ function vLog() {
 
 const RENDER = {
   ringkasan: vRingkasan, peserta: () => { const P = T("peserta"), n = P.filter(ikutDP).length;
-    return vSimple("peserta", `<div class="chips"><span class="chip"><b>${P.length}</b> peserta</span><span class="chip good"><b>${n}</b> ikut doorprize</span><span class="chip"><b>${P.length-n}</b> tidak ikut doorprize</span></div>`); }, kamar: vKamar, headcount: vHeadcount, bagasi: vBagasi,
+    return vSimple("peserta", `<div class="chips"><span class="chip"><b>${P.length}</b> peserta</span><span class="chip good"><b>${n}</b> ikut doorprize</span><span class="chip"><b>${P.length-n}</b> tidak ikut doorprize</span><span class="chip"><b>${Object.keys(S.accounts).length}</b> punya akses aplikasi</span></div>`); }, kamar: vKamar, headcount: vHeadcount, bagasi: vBagasi,
   properti: vProperti, gala: vGala, spin: vSpin, hadiah: vHadiah, belanja: vBelanja, bawaan: vBawaan, timeline: vTimeline,
   kontak: () => vSimple("kontak"), log: vLog,
 };
@@ -1215,7 +1217,7 @@ function renderWinners() {
 function bootGuest() {
   $("#login").classList.add("hidden"); $("#shell").classList.add("hidden"); $("#guest").classList.remove("hidden");
   document.body.style.background = "#0C1B29";
-  const loggedIn = localStorage.getItem("lg_pass");
+  const loggedIn = localStorage.getItem("lg_token");
   $("#guestIn").innerHTML = `
     <div class="g-head"><div><b>Doorprize Gala Dinner</b><small>Gathering DTK x PERKOP, Jimbaran</small></div>${loggedIn?`<a href="/" onclick="localStorage.setItem('lg_view','spin')">Panel admin</a>`:""}</div>
     <div id="stageSlot"></div>
@@ -1227,7 +1229,7 @@ function bootGuest() {
 
 /* ---- panel admin ---- */
 function vSpin() {
-  return header("Spinwheel doorprize", "Kamu yang menekan SPIN, semua orang menonton di HP masing-masing lewat link penonton. Pemenang otomatis tercatat di Hadiah.") + `
+  return header("Spinwheel doorprize", isAdmin() ? "Kamu yang menekan SPIN, semua orang menonton di HP masing-masing lewat link penonton. Pemenang otomatis tercatat di Hadiah." : "Admin yang menekan SPIN, semua orang menonton di HP masing-masing. Pemenang otomatis tercatat di Hadiah.") + `
   <div class="spin-grid">
     <div><div id="stageSlot"></div></div>
     <div class="spin-admin" id="spinAdmin"></div>
@@ -1245,6 +1247,13 @@ async function spinApi(route, body) {
 }
 function renderSpinAdmin(force) {
   const box = $("#spinAdmin"); if (!box || !S.db) return;
+  if (!isAdmin()) {
+    if (box.dataset.na) { renderWinners(); return; } box.dataset.na = "1";
+    box.innerHTML = `<div class="panel"><h4>Hanya admin yang bisa memutar</h4><p class="muted" style="font-size:14px;margin:0">Kamu tetap bisa menonton di sini. Minta admin Logistik kalau perlu akses spinwheel.</p></div>
+      <div class="panel"><h4>Link penonton</h4><div class="row"><input class="inp" readonly value="${esc(location.origin + "/spin")}" onclick="this.select()"><button class="btn sm" data-act="spCopy">${icon("copy")} Salin</button><button class="btn sm" data-act="spQR">QR</button></div><div id="spQRBox"></div></div>
+      <div class="panel"><h4>Riwayat undian</h4><div class="winners" data-winners="all"></div></div>`;
+    renderWinners(); return;
+  }
   const st = SP.st;
   const m = wheelModel();
   const spinningNow = m.phase === "count" || m.phase === "spin";
@@ -1404,6 +1413,7 @@ function openForm(key, id, preset) {
   const body = `<form id="frm" data-t="${key}" data-id="${esc(id||"")}">
     ${ro.map(c => `<div class="fld"><span style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--muted)">${esc(c.l)}</span><div class="ro">${esc(row[c.k]||"–")}</div></div>`).join("")}
     ${d.cols.map(c => fieldHTML(c, row[c.k] ?? "", row)).join("")}
+    ${key === "peserta" && isAdmin() ? accessSection(row.id, row.nama, isNew) : ""}
     ${!isNew ? lastChange(key, row) : ""}
   </form>`;
   const foot = `${(!isNew && !d.noDel) ? `<button class="btn danger" data-act="del" data-t="${key}" data-id="${esc(id)}">Hapus</button>` : ""}
@@ -1428,6 +1438,9 @@ const tblLabel = key => key === "bagasi" ? "Bagasi" : key === "headcount" ? "Hea
 
 function saveForm() {
   const f = $("#frm"); const key = f.dataset.t; const id = f.dataset.id; const d = DEF[key];
+  const acc = key === "peserta" ? collectAccess() : null;
+  if (acc && acc.error) { toast(acc.error); return; }
+  if (acc && acc.req) setTimeout(() => saveAccess(acc.req), 0);
   const orig = JSON.parse(f.dataset.orig || "{}");
   const vals = {};
   d.cols.forEach(c => { const el = f.elements[c.k]; if (el) vals[c.k] = el.value.trim(); });
@@ -1517,7 +1530,7 @@ document.addEventListener("click", e => {
     case "copywa": copyWA(); break;
     case "logreload": S.log = null; render(); break;
     case "export": exportXlsx(); break;
-    case "logout": if (confirm("Keluar dan ganti nama?")) logout(); break;
+    case "logout": if (confirm("Keluar dari aplikasi di HP ini?")) logout(); break;
   }
 });
 document.addEventListener("input", e => {
@@ -1539,8 +1552,9 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#layer"
 $("#meBtn").addEventListener("click", () => sheet(S.user, `<div class="menu">
   <button data-act="export">${icon("down")} Unduh semua data (Excel)</button>
   <button data-act="go" data-v="log">${icon("clock")} Riwayat update</button>
-  <button data-act="logout">${icon("out")} Keluar / ganti nama</button></div>
-  <p class="muted" style="font-size:13px">Masuk sebagai <b>${esc(S.user)}</b>. Nama ini tercatat di setiap perubahan.</p>`));
+  <button data-act="pwChange">${icon("key")} Ganti password</button>
+  <button data-act="logout">${icon("out")} Keluar</button></div>
+  <p class="muted" style="font-size:13px">Masuk sebagai <b>${esc(S.me?.username || S.user)}</b> (${esc(S.me?.role || "")}). Nama ini tercatat di setiap perubahan.${isAdmin() ? " Atur akses orang lain dari menu Peserta." : ""}</p>`));
 
 function copyWA() {
   const R = T("bawaan"); const g = {};
@@ -1574,36 +1588,97 @@ async function exportXlsx() {
   } catch (err) { toast("Gagal membuat Excel. Cek koneksi lalu coba lagi."); }
 }
 
-/* ============ Login ============ */
+
+/* ---- akses aplikasi (diatur admin dari menu Peserta) ---- */
+function accessSection(pid, nama, isNew) {
+  if (isNew) return `<p class="muted" style="font-size:13px">Akses aplikasi bisa diatur setelah peserta ini disimpan.</p>`;
+  const a = S.accounts[pid];
+  const sug = a ? a.username : String(nama || "").trim().split(/\s+/)[0].toLowerCase();
+  return `<div class="panel" style="margin:4px 0 12px" id="accBox" data-pid="${esc(pid)}" data-role="${a ? a.role : ""}" data-user="${esc(a ? a.username : "")}">
+    <h4>Akses aplikasi</h4>
+    <label class="fld"><span>Peran</span><select class="inp" id="accRole">
+      <option value="" ${!a?"selected":""}>Tidak punya akses</option>
+      <option ${a?.role==="Anggota"?"selected":""}>Anggota</option>
+      <option ${a?.role==="Admin"?"selected":""}>Admin</option></select></label>
+    <div id="accMore" class="${a?"":"hidden"}">
+      <label class="fld"><span>Nama pengguna (untuk login)</span><input class="inp" id="accUser" value="${esc(sug)}" autocapitalize="none" spellcheck="false" maxlength="30"></label>
+      <label class="fld"><span>${a ? "Reset password" : "Password awal"}</span><input class="inp" id="accPw" type="text" autocomplete="off" placeholder="${a ? "Kosongkan kalau tidak direset" : "Minimal 6 karakter"}"></label>
+    </div>
+    <p class="muted" style="font-size:13px;margin:0">Admin: atur akses & jalankan spinwheel. Anggota: isi & ubah data. Kirim nama pengguna & password ke orangnya lewat WA.</p>
+  </div>`;
+}
+document.addEventListener("change", e => { if (e.target.id === "accRole") $("#accMore").classList.toggle("hidden", !e.target.value); });
+function collectAccess() {
+  const box = $("#accBox"); if (!box) return null;
+  const role = $("#accRole").value, user = $("#accUser").value.trim().toLowerCase().replace(/\s+/g, ""), pw = $("#accPw").value;
+  const was = box.dataset.role, wasUser = box.dataset.user;
+  if (!role && !was) return null;
+  if (role && !user) return { error: "Isi nama pengguna" };
+  if (role && !was && pw.length < 6) return { error: "Buat password awal minimal 6 karakter" };
+  if (pw && pw.length < 6) return { error: "Password minimal 6 karakter" };
+  if (role === was && user === wasUser && !pw) return null;
+  return { req: { pid: box.dataset.pid, role, username: user, password: pw } };
+}
+async function saveAccess(req) {
+  try {
+    const d = await api("accounts/set", { method:"POST", body: JSON.stringify(req) });
+    S.accounts = Object.fromEntries(d.accounts.map(a => [a.pid, a]));
+    toast(!req.role ? "Akses dicabut" : req.password ? `Akses disimpan. Login: ${req.username} / ${req.password}` : "Akses disimpan");
+    render(); S.log = null;
+  } catch (e) { toast(e.message); }
+}
+function changePassword() {
+  sheet("Ganti password", `<form id="pwFrm">
+    <label class="fld"><span>Password lama</span><input class="inp" id="pwOld" type="password" autocomplete="current-password" required></label>
+    <label class="fld"><span>Password baru (minimal 6 karakter)</span><input class="inp" id="pwNew" type="password" autocomplete="new-password" required minlength="6"></label>
+  </form>`, `<button class="btn" data-act="close">Batal</button><button class="btn pri" data-act="pwSave">Simpan password</button>`, true);
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  if (b.dataset.act === "pwChange") changePassword();
+  if (b.dataset.act === "pwSave") {
+    try { await api("account/password", { method:"POST", body: JSON.stringify({ old: $("#pwOld").value, new: $("#pwNew").value }) }); closeLayer(); toast("Password diganti"); }
+    catch (err) { toast(err.message); }
+  }
+});
+
+/* ============ Login & akun ============ */
+const isAdmin = () => S.me?.role === "Admin";
 function logout(msg) {
-  localStorage.removeItem("lg_pass"); S.pass = ""; S.db = null;
+  if (S.token && !msg) fetch("/api/account/logout", { method:"POST", headers:{ "x-token": S.token } }).catch(() => {});
+  localStorage.removeItem("lg_token"); localStorage.removeItem("lg_pass"); S.token = ""; S.db = null; S.me = null;
   $("#shell").classList.add("hidden"); $("#login").classList.remove("hidden"); closeLayer();
-  $("#lgName").value = S.user || ""; $("#lgErr").textContent = msg || "";
+  $("#lgName").value = localStorage.getItem("lg_uname") || ""; $("#lgPass").value = ""; $("#lgErr").textContent = msg || "";
 }
 $("#loginForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const name = $("#lgName").value.trim(), pass = $("#lgPass").value;
-  if (!name) return;
+  const username = $("#lgName").value.trim(), password = $("#lgPass").value;
+  if (!username) return;
   $("#lgBtn").disabled = true; $("#lgBtn").textContent = "Memeriksa…"; $("#lgErr").textContent = "";
-  S.user = name; S.pass = pass;
   try {
-    await api("login", { method:"POST" });
-    localStorage.setItem("lg_user", name); localStorage.setItem("lg_pass", pass);
+    const d = await api("login", { method:"POST", body: JSON.stringify({ username, password }) });
+    S.token = d.token; S.me = d.me; S.user = d.me.username.charAt(0).toUpperCase() + d.me.username.slice(1);
+    localStorage.setItem("lg_token", d.token); localStorage.setItem("lg_user", S.user); localStorage.setItem("lg_uname", d.me.username);
     start();
   } catch (err) {
-    $("#lgErr").textContent = err.status === 401 ? "Password salah. Tanya koordinator Logistik." : err.message;
+    $("#lgErr").textContent = err.status === 401 ? "Nama pengguna atau password salah. Tanya admin Logistik." : err.message;
   }
   $("#lgBtn").disabled = false; $("#lgBtn").textContent = "Masuk";
 });
+async function loadAccounts() {
+  try { const d = await api("accounts"); S.accounts = Object.fromEntries(d.accounts.map(a => [a.pid, a])); render(); } catch {}
+}
 async function start() {
   $("#login").classList.add("hidden"); $("#shell").classList.remove("hidden");
   $("#main").innerHTML = `<div class="empty">Memuat data…</div>`;
+  try { const d = await api("me"); S.me = d.me; } catch (e) { if (e.status === 401) return logout("Sesi berakhir. Silakan masuk lagi."); }
   await load(true);
+  loadAccounts();
   setInterval(() => { if (!document.hidden) load(); }, 15000);
 }
-document.addEventListener("visibilitychange", () => { if (!document.hidden && S.pass) load(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden && S.token) load(); });
 
-if (isGuestPath()) bootGuest(); else if (S.user && S.pass) start(); else logout();
+if (isGuestPath()) bootGuest(); else if (S.token) start(); else logout(localStorage.getItem("lg_pass") ? "Sekarang setiap orang punya akun sendiri. Minta nama pengguna & password ke admin Logistik." : "");
 </script>
 </body>
 </html>

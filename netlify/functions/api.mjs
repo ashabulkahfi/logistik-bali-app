@@ -1,6 +1,7 @@
 // API Sie Logistik — Gathering DTK x PERKOP Bali
 // Data disimpan di Netlify Blobs (gratis, bawaan Netlify, tanpa database terpisah).
 import { getStore } from "@netlify/blobs";
+import { pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import SEED from "./seed.mjs";
 
 export const config = { path: "/api/*" };
@@ -98,6 +99,109 @@ function applyOps(db, ops) {
   return entries;
 }
 
+
+/* ================= Akun & login per orang =================
+   Akun disimpan terpisah dari data (blob "accounts"), password di-hash dan tidak pernah dikirim ke HP.
+   Peran: "Admin" (atur akses + spinwheel) dan "Anggota" (isi & ubah data). */
+const ACC_KEY = "accounts";
+const ACC_EMPTY = { users: {}, sessions: {} };
+const hashPw = (pw, salt) => pbkdf2Sync(String(pw), salt, 60000, 32, "sha256").toString("hex");
+const checkPw = (pw, u) => {
+  const a = Buffer.from(hashPw(pw, u.salt), "hex"), b = Buffer.from(u.hash, "hex");
+  return a.length === b.length && timingSafeEqual(a, b);
+};
+const normUser = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, "").slice(0, 30);
+const pubUser = (pid, u) => ({ pid, username: u.username, role: u.role });
+
+// Pertama kali: Kahfi otomatis jadi Admin dengan password lama tim, supaya bisa mengatur akun lain.
+async function ensureAccounts(st) {
+  const cur = await read(st, ACC_KEY, ACC_EMPTY);
+  if (Object.keys(cur.data.users).length) return cur.data;
+  const db = (await read(st, "db", SEED)).data;
+  const k = (db.tables.peserta || []).find((p) => /kahfi/i.test(p.nama)) || (db.tables.peserta || [])[0];
+  return mutate(st, ACC_KEY, ACC_EMPTY, (a) => {
+    if (Object.keys(a.users).length) return false;
+    const salt = randomBytes(16).toString("hex");
+    a.users[k.id] = { username: "kahfi", role: "Admin", salt, hash: hashPw(PASSWORD(), salt) };
+  });
+}
+async function whoAmI(st, req) {
+  const tok = req.headers.get("x-token") || "";
+  if (!tok) return null;
+  const a = await ensureAccounts(st);
+  const sess = a.sessions[tok];
+  const u = sess && a.users[sess.pid];
+  return u ? { pid: sess.pid, username: u.username, role: u.role, token: tok } : null;
+}
+const displayName = (u) => u.username.charAt(0).toUpperCase() + u.username.slice(1);
+
+async function accountRoute(st, route, req, me) {
+  const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+  if (route === "account/logout") {
+    await mutate(st, ACC_KEY, ACC_EMPTY, (a) => { delete a.sessions[me.token]; });
+    return json({ ok: true });
+  }
+  if (route === "account/password") {
+    const nw = String(body.new || "");
+    if (nw.length < 6) return json({ error: "Password baru minimal 6 karakter" }, 400);
+    let err = null;
+    await mutate(st, ACC_KEY, ACC_EMPTY, (a) => {
+      const u = a.users[me.pid];
+      if (!checkPw(body.old || "", u)) { err = "Password lama salah"; return false; }
+      u.salt = randomBytes(16).toString("hex"); u.hash = hashPw(nw, u.salt);
+      for (const [t, s] of Object.entries(a.sessions)) if (s.pid === me.pid && t !== me.token) delete a.sessions[t];
+    });
+    if (err) return json({ error: err }, 400);
+    return json({ ok: true });
+  }
+  if (route === "accounts" && req.method === "GET") {
+    const a = (await read(st, ACC_KEY, ACC_EMPTY)).data;
+    return json({ accounts: Object.entries(a.users).map(([pid, u]) => pubUser(pid, u)) });
+  }
+  if (route === "accounts/set") {
+    if (me.role !== "Admin") return json({ error: "Hanya admin yang bisa mengatur akses" }, 403);
+    const pid = String(body.pid || ""), role = ["Admin", "Anggota"].includes(body.role) ? body.role : "";
+    const db = (await read(st, "db", SEED)).data;
+    const p = (db.tables.peserta || []).find((x) => x.id === pid);
+    if (!p) return json({ error: "Peserta tidak ditemukan" }, 404);
+    let err = null, change = "";
+    await mutate(st, ACC_KEY, ACC_EMPTY, (a) => {
+      err = null; change = "";
+      const u = a.users[pid];
+      const admins = Object.entries(a.users).filter(([id, x]) => x.role === "Admin" && id !== pid).length;
+      if (!role) {
+        if (!u) return false;
+        if (pid === me.pid) { err = "Tidak bisa mencabut akses akun sendiri"; return false; }
+        if (u.role === "Admin" && !admins) { err = "Harus ada minimal satu admin"; return false; }
+        delete a.users[pid];
+        for (const [t, s] of Object.entries(a.sessions)) if (s.pid === pid) delete a.sessions[t];
+        change = "akses dicabut"; return;
+      }
+      const username = normUser(body.username) || (u && u.username);
+      if (!username) { err = "Nama pengguna wajib diisi"; return false; }
+      if (Object.entries(a.users).some(([id, x]) => id !== pid && x.username === username)) { err = `Nama pengguna "${username}" sudah dipakai`; return false; }
+      if (u && u.role === "Admin" && role !== "Admin" && !admins) { err = "Harus ada minimal satu admin"; return false; }
+      const pin = String(body.password || "");
+      if (!u && pin.length < 6) { err = "Buat password awal minimal 6 karakter"; return false; }
+      if (pin && pin.length < 6) { err = "Password minimal 6 karakter"; return false; }
+      const nu = u ? { ...u } : {};
+      const parts = [];
+      if (!u) parts.push(`akses ${role}`); else if (u.role !== role) parts.push(`peran ${u.role} → ${role}`);
+      if (u && u.username !== username) parts.push(`nama pengguna ${username}`);
+      nu.username = username; nu.role = role;
+      if (pin) { nu.salt = randomBytes(16).toString("hex"); nu.hash = hashPw(pin, nu.salt); if (u) parts.push("password direset"); }
+      a.users[pid] = nu;
+      if (pin && u) for (const [t, s] of Object.entries(a.sessions)) if (s.pid === pid) delete a.sessions[t];
+      change = parts.join(", ");
+      if (!change) return false;
+    });
+    if (err) return json({ error: err }, 400);
+    if (change) await addLog(st, [{ user: displayName(me), table: "peserta", tableLabel: "Akses aplikasi", action: "ubah", label: `${p.nama}: ${change}` }]);
+    const a = (await read(st, ACC_KEY, ACC_EMPTY)).data;
+    return json({ accounts: Object.entries(a.users).map(([id, u]) => pubUser(id, u)) });
+  }
+  return null;
+}
 
 /* ================= Spinwheel doorprize =================
    Server yang memilih pemenang dan jam mulai putaran (startAt).
@@ -220,9 +324,6 @@ export default async (req) => {
   const url = new URL(req.url);
   const route = url.pathname.replace(/^\/api\/?/, "").replace(/\/$/, "");
 
-  const pass = req.headers.get("x-pass") || "";
-  let user = "";
-  try { user = decodeURIComponent(req.headers.get("x-user") || "").trim().slice(0, 40); } catch {}
   const st = store();
 
   // Foto hadiah: boleh dilihat tanpa login (dipakai layar penonton)
@@ -239,15 +340,34 @@ export default async (req) => {
     try { return await spinRoute(st, route, req, null); } catch (e) { return json({ error: e.message }, 500); }
   }
 
-  if (pass !== PASSWORD()) return json({ error: "Password salah" }, 401);
-  if (!user) return json({ error: "Nama wajib diisi" }, 400);
+  // Login: nama pengguna + password masing-masing. Token disimpan di HP, jadi cukup login sekali.
+  if (route === "login" && req.method === "POST") {
+    try {
+      const body = await req.json().catch(() => ({}));
+      const a = await ensureAccounts(st);
+      const uname = normUser(body.username);
+      const hit = Object.entries(a.users).find(([, u]) => u.username === uname);
+      if (!hit || !checkPw(body.password || "", hit[1])) return json({ error: "Nama pengguna atau password salah" }, 401);
+      const token = randomBytes(24).toString("hex");
+      await mutate(st, ACC_KEY, ACC_EMPTY, (x) => { x.sessions[token] = { pid: hit[0], t: Date.now() }; });
+      return json({ token, me: pubUser(hit[0], hit[1]) });
+    } catch (e) { return json({ error: e.message }, 500); }
+  }
+
+  const me = await whoAmI(st, req).catch(() => null);
+  if (!me) return json({ error: "Sesi berakhir. Silakan masuk lagi." }, 401);
+  const user = displayName(me);
 
   try {
-    if (route === "login") return json({ ok: true });
-
     await upgradeIfNeeded(st, user);
 
-    if (route.startsWith("spin/")) return await spinRoute(st, route, req, user);
+    if (route === "me") return json({ me: pubUser(me.pid, me) });
+    if (route.startsWith("account") ) { const r = await accountRoute(st, route, req, me); if (r) return r; }
+
+    if (route.startsWith("spin/")) {
+      if (route !== "spin/refresh" && me.role !== "Admin") return json({ error: "Hanya admin yang bisa menjalankan spinwheel" }, 403);
+      return await spinRoute(st, route, req, user);
+    }
 
     // Upload / hapus foto hadiah. Foto sudah dikecilkan di HP sebelum dikirim.
     if (route.startsWith("img/") && (req.method === "POST" || req.method === "DELETE")) {
@@ -303,6 +423,7 @@ export default async (req) => {
     // Kembalikan semua data ke isi Excel awal (hanya jika diminta eksplisit)
     if (route === "reset" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
+      if (me.role !== "Admin") return json({ error: "Hanya admin" }, 403);
       if (body.confirm !== "RESET") return json({ error: "Konfirmasi salah" }, 400);
       const fresh = structuredClone(SEED);
       const cur = (await read(st, "db", SEED)).data;

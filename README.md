@@ -33,14 +33,16 @@ npx netlify-cli deploy --prod
 ```
 (Pertama kali akan ditanya mau buat site baru — pilih *Create & configure a new site*.)
 
-## Login
-- Saat pertama buka: isi **nama** + **password tim** (`ciekebali`).
-- Tersimpan di browser, jadi cukup sekali per HP/laptop.
-- Nama dipakai di **Riwayat update**: siapa mengubah apa, dari nilai apa ke apa, jam berapa.
-
-### Ganti password (opsional)
-Netlify → Site configuration → Environment variables → tambah `APP_PASSWORD` = password baru → Deploy ulang.
-Semua anggota tim otomatis diminta login lagi.
+## Login & akun
+- Setiap orang punya akun sendiri: **nama pengguna + password**. Login cukup sekali per HP/laptop.
+- Akun pertama otomatis: **kahfi** (Admin) dengan password `ciekebali` (atau nilai `APP_PASSWORD` di Netlify).
+  Segera ganti lewat menu akun (lingkaran inisial kanan atas) > Ganti password.
+- Admin memberi akses dari menu **Peserta**: buka nama orangnya > bagian **Akses aplikasi** > pilih peran,
+  isi nama pengguna & password awal > Simpan. Kirim nama pengguna & password ke orangnya lewat WA.
+- Peran: **Admin** = atur akses + jalankan spinwheel. **Anggota** = isi & ubah data.
+- Cabut akses: pilih "Tidak punya akses". Orang itu langsung keluar dari aplikasi di HP-nya.
+- Lupa password: admin isi "Reset password" di bagian Akses aplikasi.
+- Semua perubahan tercatat atas nama pengguna masing-masing di Riwayat update.
 
 ## Fitur
 - Ringkasan (pengganti sheet Panduan): hitung mundur, rekap otomatis, cek "harus nol", tugas terdekat, perlu dikonfirmasi, aktivitas terbaru
@@ -53,7 +55,7 @@ Semua anggota tim otomatis diminta login lagi.
 ## Kembalikan ke data Excel awal (hati-hati, menghapus semua isian)
 ```bash
 curl -X POST https://NAMA-SITE.netlify.app/api/reset \
-  -H "x-pass: ciekebali" -H "x-user: Kahfi" -H "content-type: application/json" \
+  -H "x-token: TOKEN_ADMIN" -H "content-type: application/json" \
   -d '{"confirm":"RESET"}'
 ```
 
