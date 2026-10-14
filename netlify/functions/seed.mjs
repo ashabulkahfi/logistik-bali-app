@@ -243,7 +243,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed - Management"
+    "ketKamar": "King bed - Management",
+    "doorprize": "Ya"
    },
    {
     "id": "p2",
@@ -259,7 +260,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed - Pulang Sabtu 12.30"
+    "ketKamar": "King bed - Pulang Sabtu 12.30",
+    "doorprize": "Ya"
    },
    {
     "id": "p3",
@@ -275,7 +277,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed - Management"
+    "ketKamar": "Twin bed - Management",
+    "doorprize": "Ya"
    },
    {
     "id": "p4",
@@ -291,7 +294,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed - Management"
+    "ketKamar": "Twin bed - Management",
+    "doorprize": "Ya"
    },
    {
     "id": "p5",
@@ -307,7 +311,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p6",
@@ -323,7 +328,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p7",
@@ -339,7 +345,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed"
+    "ketKamar": "King bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p8",
@@ -355,7 +362,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p9",
@@ -371,7 +379,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p10",
@@ -387,7 +396,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p11",
@@ -403,7 +413,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p12",
@@ -419,7 +430,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p13",
@@ -435,7 +447,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed"
+    "ketKamar": "King bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p14",
@@ -451,7 +464,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p15",
@@ -467,7 +481,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed - Management"
+    "ketKamar": "King bed - Management",
+    "doorprize": "Ya"
    },
    {
     "id": "p16",
@@ -483,7 +498,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed - Management"
+    "ketKamar": "Twin bed - Management",
+    "doorprize": "Ya"
    },
    {
     "id": "p17",
@@ -499,7 +515,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed - Anak Bu Dina"
+    "ketKamar": "Twin bed - Anak Bu Dina",
+    "doorprize": "Tidak"
    },
    {
     "id": "p18",
@@ -515,7 +532,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed - Management, Smoking room"
+    "ketKamar": "Twin bed - Management, Smoking room",
+    "doorprize": "Ya"
    },
    {
     "id": "p19",
@@ -531,7 +549,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed"
+    "ketKamar": "King bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p20",
@@ -547,7 +566,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed - Pulang ke Surabaya"
+    "ketKamar": "King bed - Pulang ke Surabaya",
+    "doorprize": "Ya"
    },
    {
     "id": "p21",
@@ -563,7 +583,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p22",
@@ -579,7 +600,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed - Smoking room"
+    "ketKamar": "Twin bed - Smoking room",
+    "doorprize": "Ya"
    },
    {
     "id": "p23",
@@ -595,7 +617,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed"
+    "ketKamar": "King bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p24",
@@ -611,7 +634,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed"
+    "ketKamar": "King bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p25",
@@ -627,7 +651,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed"
+    "ketKamar": "King bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p26",
@@ -643,7 +668,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed"
+    "ketKamar": "King bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p27",
@@ -659,7 +685,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p28",
@@ -675,7 +702,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed - Keluarga"
+    "ketKamar": "King bed - Keluarga",
+    "doorprize": "Ya"
    },
    {
     "id": "p29",
@@ -691,7 +719,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "Twin bed"
+    "ketKamar": "Twin bed",
+    "doorprize": "Ya"
    },
    {
     "id": "p30",
@@ -707,7 +736,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed - Keluarga"
+    "ketKamar": "King bed - Keluarga",
+    "doorprize": "Tidak"
    },
    {
     "id": "p31",
@@ -723,7 +753,8 @@ export default {
     "ketua": "",
     "kesehatan": "",
     "darurat": "",
-    "ketKamar": "King bed - Keluarga"
+    "ketKamar": "King bed - Keluarga",
+    "doorprize": "Tidak"
    }
   ],
   "headcount": [
@@ -1214,6 +1245,7 @@ export default {
   "hadiah": [
    {
     "id": "h1",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "Jaket Selimut",
     "penerima": "",
@@ -1224,6 +1256,7 @@ export default {
    },
    {
     "id": "h2",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "Tumblr mini",
     "penerima": "",
@@ -1234,6 +1267,7 @@ export default {
    },
    {
     "id": "h3",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "Lunch Box Ecentio",
     "penerima": "",
@@ -1244,6 +1278,7 @@ export default {
    },
    {
     "id": "h4",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "Lunch Box Lock n Lock",
     "penerima": "",
@@ -1254,6 +1289,7 @@ export default {
    },
    {
     "id": "h5",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "Handuk",
     "penerima": "",
@@ -1264,6 +1300,7 @@ export default {
    },
    {
     "id": "h6",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "TWS",
     "penerima": "",
@@ -1274,6 +1311,7 @@ export default {
    },
    {
     "id": "h7",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "Tumblr Rosca",
     "penerima": "",
@@ -1284,6 +1322,7 @@ export default {
    },
    {
     "id": "h8",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "Tas Laptop Kipling",
     "penerima": "",
@@ -1294,6 +1333,7 @@ export default {
    },
    {
     "id": "h9",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "Lanyard",
     "penerima": "",
@@ -1304,6 +1344,7 @@ export default {
    },
    {
     "id": "h10",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "(belum diisi panitia)",
     "penerima": "",
@@ -1314,6 +1355,7 @@ export default {
    },
    {
     "id": "h11",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "(belum diisi panitia)",
     "penerima": "",
@@ -1324,6 +1366,7 @@ export default {
    },
    {
     "id": "h12",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "(belum diisi panitia)",
     "penerima": "",
@@ -1334,6 +1377,7 @@ export default {
    },
    {
     "id": "h13",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "(belum diisi panitia)",
     "penerima": "",
@@ -1344,6 +1388,7 @@ export default {
    },
    {
     "id": "h14",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "(belum diisi panitia)",
     "penerima": "",
@@ -1354,6 +1399,7 @@ export default {
    },
    {
     "id": "h15",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "(belum diisi panitia)",
     "penerima": "",
@@ -1364,6 +1410,7 @@ export default {
    },
    {
     "id": "h16",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "(belum diisi panitia)",
     "penerima": "",
@@ -1374,6 +1421,7 @@ export default {
    },
    {
     "id": "h17",
+    "gambar": "",
     "asal": "DTK",
     "hadiah": "(belum diisi panitia)",
     "penerima": "",
@@ -1384,6 +1432,7 @@ export default {
    },
    {
     "id": "h18",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Selimut",
     "penerima": "",
@@ -1394,6 +1443,7 @@ export default {
    },
    {
     "id": "h19",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Lunch Box Lock n Lock",
     "penerima": "",
@@ -1404,6 +1454,7 @@ export default {
    },
    {
     "id": "h20",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "StandHolder HP",
     "penerima": "",
@@ -1414,6 +1465,7 @@ export default {
    },
    {
     "id": "h21",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Tas Laptop Export",
     "penerima": "",
@@ -1424,6 +1476,7 @@ export default {
    },
    {
     "id": "h22",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Earphone",
     "penerima": "",
@@ -1434,6 +1487,7 @@ export default {
    },
    {
     "id": "h23",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Earphone",
     "penerima": "",
@@ -1444,6 +1498,7 @@ export default {
    },
    {
     "id": "h24",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Power Bank",
     "penerima": "",
@@ -1454,6 +1509,7 @@ export default {
    },
    {
     "id": "h25",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Kipas",
     "penerima": "",
@@ -1464,6 +1520,7 @@ export default {
    },
    {
     "id": "h26",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Voucher 100rb",
     "penerima": "",
@@ -1474,6 +1531,7 @@ export default {
    },
    {
     "id": "h27",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Voucher 100rb",
     "penerima": "",
@@ -1484,6 +1542,7 @@ export default {
    },
    {
     "id": "h28",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Voucher 100rb",
     "penerima": "",
@@ -1494,6 +1553,7 @@ export default {
    },
    {
     "id": "h29",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Voucher 100rb",
     "penerima": "",
@@ -1504,6 +1564,7 @@ export default {
    },
    {
     "id": "h30",
+    "gambar": "",
     "asal": "PERKOP",
     "hadiah": "Voucher 100rb",
     "penerima": "",

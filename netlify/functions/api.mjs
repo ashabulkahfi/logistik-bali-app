@@ -103,23 +103,29 @@ function applyOps(db, ops) {
    Server yang memilih pemenang dan jam mulai putaran (startAt).
    Semua HP memutar roda yang sama mengikuti jam server, jadi hasilnya tampil serentak. */
 const SPIN_KEY = "spin";
-const SPIN_DUR = 9000;      // lama putaran (ms)
+const SPIN_DUR = 15000;     // lama putaran (ms), sengaja lama supaya dramatis
 const SPIN_LEAD = 3000;     // hitung mundur sebelum roda berputar (ms)
 const SPIN_EMPTY = { v: 0, announce: null, current: null, history: [], exclude: [], pool: [] };
 
 function randInt(n) {
   const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n;
 }
+// Ikut doorprize: kolom "doorprize" di Peserta (Ya/Tidak). Kalau belum diisi: pegawai ikut, keluarga tidak.
+const ikutDoorprize = (p) => p.doorprize ? p.doorprize === "Ya" : p.status !== "Keluarga";
 function buildPool(db, spin) {
   const won = new Set(spin.history.filter((h) => !h.void).map((h) => h.pid));
-  const ex = new Set(spin.exclude);
-  return (db.tables.peserta || []).filter((p) => p.nama && !won.has(p.id) && !ex.has(p.id)).map((p) => ({ id: p.id, nama: p.nama }));
+  const ex = new Set(spin.exclude); // yang dibatalkan karena tidak hadir
+  return (db.tables.peserta || []).filter((p) => p.nama && ikutDoorprize(p) && !won.has(p.id) && !ex.has(p.id)).map((p) => ({ id: p.id, nama: p.nama }));
+}
+function imgOf(db, hid) {
+  const h = hid && (db.tables.hadiah || []).find((x) => x.id === hid);
+  return h && h.gambar ? `/api/img/${encodeURIComponent(hid)}?v=${encodeURIComponent(h.gambar)}` : "";
 }
 const spinPublic = (s) => ({
-  v: s.v, now: Date.now(), announce: s.announce && { prize: s.announce.prize }, pool: s.pool.map((p) => p.nama), exclude: s.exclude,
-  current: s.current && { id: s.current.id, prize: s.current.prize, names: s.current.names, winnerIdx: s.current.winnerIdx,
+  v: s.v, now: Date.now(), announce: s.announce && { prize: s.announce.prize, img: s.announce.img || "" }, pool: s.pool.map((p) => p.nama), exclude: s.exclude,
+  current: s.current && { id: s.current.id, prize: s.current.prize, img: s.current.img || "", names: s.current.names, winnerIdx: s.current.winnerIdx,
     jitter: s.current.jitter, turns: s.current.turns, startAt: s.current.startAt, dur: s.current.dur },
-  history: s.history.map((h) => ({ id: h.id, prize: h.prize, winner: h.winner, revealAt: h.revealAt, void: !!h.void })),
+  history: s.history.map((h) => ({ id: h.id, prize: h.prize, img: h.img || "", winner: h.winner, revealAt: h.revealAt, void: !!h.void })),
 });
 const spinning = (s) => s.current && Date.now() < s.current.startAt + s.current.dur;
 
@@ -172,9 +178,11 @@ async function spinRoute(st, route, req, user) {
       const wi = randInt(pool.length);
       const startAt = Date.now() + SPIN_LEAD;
       const id = Date.now().toString(36) + randInt(1e6).toString(36);
-      s.current = { id, prize: s.announce.prize, hadiahId: s.announce.hadiahId, names: pool.map((p) => p.nama),
-        winnerIdx: wi, jitter: (randInt(1000) / 1000 - 0.5) * 0.7, turns: 6 + randInt(3), startAt, dur: SPIN_DUR, by: user };
-      s.history.push({ id, prize: s.announce.prize, hadiahId: s.announce.hadiahId, pid: pool[wi].id, winner: pool[wi].nama,
+      const img = imgOf(db, s.announce.hadiahId);
+      s.current = { id, prize: s.announce.prize, hadiahId: s.announce.hadiahId, img, names: pool.map((p) => p.nama),
+        // jitter: posisi berhenti di dalam segmen pemenang. Dibuat dekat batas antar nama supaya menegangkan.
+        winnerIdx: wi, jitter: (randInt(2) ? 1 : -1) * (0.22 + randInt(1000) / 1000 * 0.2), turns: 5 + randInt(2), startAt, dur: SPIN_DUR, by: user };
+      s.history.push({ id, prize: s.announce.prize, hadiahId: s.announce.hadiahId, img, pid: pool[wi].id, winner: pool[wi].nama,
         by: user, t: new Date().toISOString(), revealAt: startAt + SPIN_DUR });
       logs = [{ user, table: "hadiah", tableLabel: "Spinwheel", action: "spin", label: `${s.announce.prize}: ${pool[wi].nama}` }];
       hadiahOps = [[s.announce.hadiahId, pool[wi].nama, "✓"]];
@@ -199,6 +207,7 @@ async function spinRoute(st, route, req, user) {
     }
     else { err = "Tidak ditemukan"; return false; }
     s.pool = buildPool(db, s);
+    if (s.announce) s.announce.img = imgOf(db, s.announce.hadiahId);
     s.v = (s.v || 0) + 1;
   });
   if (err) return json({ error: err }, 409);
@@ -216,6 +225,15 @@ export default async (req) => {
   try { user = decodeURIComponent(req.headers.get("x-user") || "").trim().slice(0, 40); } catch {}
   const st = store();
 
+  // Foto hadiah: boleh dilihat tanpa login (dipakai layar penonton)
+  if (route.startsWith("img/") && req.method === "GET") {
+    const hid = decodeURIComponent(route.slice(4));
+    const res = await st.getWithMetadata("img-" + hid, { type: "arrayBuffer" });
+    if (!res || !res.data) return new Response("Not found", { status: 404 });
+    return new Response(res.data, { headers: { "content-type": res.metadata?.type || "image/jpeg",
+      "cache-control": "public, max-age=31536000, immutable" } });
+  }
+
   // Layar penonton spinwheel boleh dibuka tanpa login
   if (route === "spin/state") {
     try { return await spinRoute(st, route, req, null); } catch (e) { return json({ error: e.message }, 500); }
@@ -230,6 +248,19 @@ export default async (req) => {
     await upgradeIfNeeded(st, user);
 
     if (route.startsWith("spin/")) return await spinRoute(st, route, req, user);
+
+    // Upload / hapus foto hadiah. Foto sudah dikecilkan di HP sebelum dikirim.
+    if (route.startsWith("img/") && (req.method === "POST" || req.method === "DELETE")) {
+      const hid = decodeURIComponent(route.slice(4)).slice(0, 60);
+      if (req.method === "DELETE") { await st.delete("img-" + hid); return json({ ok: true }); }
+      const body = await req.json().catch(() => ({}));
+      const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(body.data || "");
+      if (!m) return json({ error: "Format foto tidak didukung" }, 400);
+      const buf = Buffer.from(m[2], "base64");
+      if (buf.length > 1500000) return json({ error: "Foto terlalu besar (maks 1,5 MB)" }, 400);
+      await st.set("img-" + hid, buf, { metadata: { type: m[1] } });
+      return json({ ok: true, v: Date.now().toString(36) });
+    }
 
     if (route === "data" && req.method === "GET") {
       const { data } = await read(st, "db", SEED);

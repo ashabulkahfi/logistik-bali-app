@@ -282,6 +282,10 @@ details.box[open] summary::after{content:"－"}
 .stage-status .lbl{font-size:14px;color:#A9C7D6;font-weight:600}
 .stage-status.win .big{color:#F6C453;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
 @keyframes pop{from{transform:scale(.6);opacity:0}}
+.stage-status .suspense{animation:throb .9s ease-in-out infinite}
+@keyframes throb{50%{transform:scale(1.06);color:#F6C453}}
+.stage.tense .pointer{animation:nudge .45s ease-in-out infinite}
+@keyframes nudge{50%{transform:translateX(-50%) translateY(3px)}}
 .stage-foot{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:13px;color:#A9C7D6}
 .stage-foot button{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px}
 .winners .li .num{font:800 15px var(--display);color:var(--muted);min-width:22px}
@@ -310,6 +314,24 @@ details.box[open] summary::after{content:"－"}
 #guest .box .t span,#guest .muted{color:#A9C7D6}
 #guest h3.sec{color:#fff;margin:6px 0 0}
 @media (prefers-reduced-motion:reduce){.stage-status.win .big{animation:none}}
+
+.thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--soft);display:block}
+@media (max-width:759px){table.g td .thumb{width:64px;height:64px}}
+.imgfield{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.imgfield img{width:112px;height:112px;object-fit:cover;border-radius:14px;border:1px solid var(--line)}
+.imgfield .ph{width:112px;height:112px;border-radius:14px;border:2px dashed var(--line);display:grid;place-items:center;color:var(--muted);font-size:12px;text-align:center;padding:8px}
+.imgfield .acts{display:flex;flex-direction:column;gap:8px}
+select.qs.s-ya{background-color:var(--ok-bg);color:var(--ok)}
+select.qs.s-tidak{background-color:var(--soft);color:var(--muted)}
+.pz-img{width:64px;height:64px;border-radius:14px;object-fit:cover;background:#fff;display:block;margin:0 auto 6px;border:2px solid rgba(255,255,255,.8)}
+.win-card{position:absolute;inset:9% 9%;border-radius:50%;background:rgba(12,27,41,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8%;gap:6px;z-index:3;animation:pop .55s cubic-bezier(.2,1.5,.4,1)}
+.win-card img{width:46%;aspect-ratio:1;object-fit:cover;border-radius:18px;background:#fff;border:3px solid #F6C453;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.win-card small{color:#A9C7D6;font-weight:600;font-size:clamp(11px,3.2vw,14px)}
+.win-card b{font:800 clamp(20px,6.4vw,32px)/1.08 var(--display);color:#F6C453;letter-spacing:-.5px}
+.win-card span{font-size:clamp(12px,3.4vw,15px);font-weight:700;color:#fff}
+.win-card.noimg b{font-size:clamp(26px,8vw,40px)}
+.winners .li img{width:40px;height:40px;border-radius:10px;object-fit:cover;background:#fff;flex:none}
+@media (prefers-reduced-motion:reduce){.win-card,.stage-status .suspense,.stage.tense .pointer{animation:none}}
 </style>
 </head>
 <body>
@@ -479,6 +501,7 @@ async function flush() {
     if (S.queue.length) { flush(); return; }
     if (S.log && S.view === "log") S.log = null;
     S.db = d; S.offline = false; setSync("", "Tersimpan"); render();
+    if (S.afterFlush) { const f = S.afterFlush; S.afterFlush = null; f(); }
   } catch (e) {
     S.sending = false;
     if (e.status === 401) return logout("Password tim berubah. Silakan masuk lagi.");
@@ -500,6 +523,7 @@ const DEF = {
       {k:"nama",l:"Nama",main:1,req:1},
       {k:"divisi",l:"Divisi",t:"select",o:["DTK","PERKOP"],pill:1},
       {k:"status",l:"Status",t:"select",o:["Pegawai","Keluarga"],hm:1},
+      {k:"doorprize",l:"Ikut doorprize",t:"select",o:["Ya","Tidak"],quick:1,def:r=>r.status==="Keluarga"?"Tidak":"Ya"},
       {k:"jk",l:"JK",t:"select",o:["Pria","Wanita","-"]},
       {k:"pergi",l:"Pesawat pergi",t:"select",o:PERGI,hm:1},
       {k:"pulang",l:"Pesawat pulang",t:"select",o:PULANG},
@@ -545,6 +569,7 @@ const DEF = {
     desc:"Di Bali simbolis (kartu dibagikan saat gala dinner), hadiah asli diserahkan di kantor.",
     filter:{k:"asal",l:"Semua asal"},
     cols:[
+      {k:"gambar",l:"Foto",t:"image"},
       {k:"asal",l:"Asal",t:"select",o:["DTK","PERKOP"],pill:1},
       {k:"hadiah",l:"Hadiah",main:1,req:1},
       {k:"penerima",l:"Penerima",t:"person"},
@@ -648,8 +673,9 @@ function rowsOf(key) {
 
 /* ============ Cell rendering ============ */
 function cell(key, c, r) {
-  const v = r[c.k] ?? "";
+  const v = r[c.k] || (c.def ? c.def(r) : "");
   if (c.t === "calc") return c.f(r);
+  if (c.t === "image") return v ? `<img class="thumb" src="/api/img/${encodeURIComponent(r.id)}?v=${encodeURIComponent(v)}" alt="" loading="lazy">` : "";
   if (c.t === "check") return `<button class="ck ${v?"on":""}" data-act="toggle" data-t="${key}" data-id="${esc(r.id)}" data-k="${c.k}" aria-label="${esc(c.l)}" aria-pressed="${!!v}">✓</button>`;
   if (c.quick) {
     const opts = c.o.includes(v) ? c.o : [v, ...c.o];
@@ -953,10 +979,51 @@ function vLog() {
 }
 
 const RENDER = {
-  ringkasan: vRingkasan, peserta: () => vSimple("peserta"), kamar: vKamar, headcount: vHeadcount, bagasi: vBagasi,
+  ringkasan: vRingkasan, peserta: () => { const P = T("peserta"), n = P.filter(ikutDP).length;
+    return vSimple("peserta", `<div class="chips"><span class="chip"><b>${P.length}</b> peserta</span><span class="chip good"><b>${n}</b> ikut doorprize</span><span class="chip"><b>${P.length-n}</b> tidak ikut doorprize</span></div>`); }, kamar: vKamar, headcount: vHeadcount, bagasi: vBagasi,
   properti: vProperti, gala: vGala, spin: vSpin, hadiah: vHadiah, belanja: vBelanja, bawaan: vBawaan, timeline: vTimeline,
   kontak: () => vSimple("kontak"), log: vLog,
 };
+
+
+/* ---- doorprize & foto hadiah ---- */
+const ikutDP = p => p.doorprize ? p.doorprize === "Ya" : p.status !== "Keluarga";
+function refreshSpin() { api("spin/refresh", { method:"POST", body:"{}" }).then(applySpin).catch(() => {}); }
+const imgUrl = (id, v) => `/api/img/${encodeURIComponent(id)}?v=${encodeURIComponent(v)}`;
+function imgFieldInner(id, v) {
+  return `${v ? `<img src="${imgUrl(id, v)}" alt="Foto hadiah">` : `<div class="ph">Belum ada foto</div>`}
+    <div class="acts"><label class="btn sm">${v ? "Ganti foto" : "Pilih foto"}<input type="file" accept="image/*" data-act="imgpick" data-id="${esc(id)}" hidden></label>
+    ${v ? `<button type="button" class="btn sm danger" data-act="imgdel">Hapus foto</button>` : ""}</div>`;
+}
+function shrinkImage(file, max = 900) {
+  return new Promise((ok, no) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, max / Math.max(im.width, im.height));
+      const c = document.createElement("canvas"); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", 0.82));
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); no(new Error("File bukan gambar")); };
+    im.src = url;
+  });
+}
+document.addEventListener("change", async e => {
+  const t = e.target; if (t.dataset?.act !== "imgpick" || !t.files?.[0]) return;
+  const id = t.dataset.id, box = $("#imgField"), hidden = $('#frm input[name="gambar"]');
+  box.querySelector(".acts").innerHTML = `<span class="muted" style="font-size:13px">Mengunggah…</span>`;
+  try {
+    const data = await shrinkImage(t.files[0]);
+    const r = await api("img/" + encodeURIComponent(id), { method:"POST", body: JSON.stringify({ data }) });
+    hidden.value = r.v; box.innerHTML = imgFieldInner(id, r.v);
+    toast("Foto terunggah. Tekan Simpan perubahan.");
+  } catch (err) { toast(err.message || "Gagal mengunggah foto"); box.innerHTML = imgFieldInner(id, hidden.value); }
+});
+document.addEventListener("click", e => {
+  if (!e.target.closest('[data-act="imgdel"]')) return;
+  const hidden = $('#frm input[name="gambar"]'); hidden.value = "";
+  $("#imgField").innerHTML = imgFieldInner($("#frm").dataset.id || JSON.parse($("#frm").dataset.orig).id, "");
+});
 
 /* ============ Spinwheel (live di semua HP) ============ */
 const SP = { st:null, v:-1, off:0, rtt:1e9, timer:null, raf:0, el:null, cv:null, size:0, sound:false, ac:null,
@@ -964,6 +1031,15 @@ const SP = { st:null, v:-1, off:0, rtt:1e9, timer:null, raf:0, el:null, cv:null,
 const WHEEL_COLORS = ["#0B6F6A","#E9A520","#C9364F","#1F5C99","#0E8C85","#F2D7A0","#7A3E9D","#2E8B57"];
 const WHEEL_TEXT   = ["#fff","#2A1D00","#fff","#fff","#fff","#2A1D00","#fff","#fff"];
 const sNow = () => Date.now() + SP.off;
+/* Kurva putaran: ngebut di awal, lalu melambat panjang. Kecepatan ~ (1-t)^1.6, jadi 3 detik terakhir
+   roda masih merayap melewati 2-3 nama. Dihitung sekali jadi tabel supaya semua HP identik. */
+const SPIN_CURVE = (() => {
+  const N = 2000, a = 0.07, v = [], p = [0]; let sum = 0;
+  for (let i = 0; i < N; i++) { const t = (i + 0.5) / N; const ramp = t < a ? Math.sin(t / a * Math.PI / 2) : 1; v.push(ramp * Math.pow(1 - t, 1.6)); }
+  v.forEach(x => { sum += x; p.push(sum); });
+  return p.map(x => x / sum);
+})();
+function spinEase(t) { const f = t * (SPIN_CURVE.length - 1), i = Math.floor(f); return SPIN_CURVE[i] + (SPIN_CURVE[Math.min(i + 1, SPIN_CURVE.length - 1)] - SPIN_CURVE[i]) * (f - i); }
 const isGuestPath = () => /^\/spin\/?$/.test(location.pathname);
 
 async function spinPoll() {
@@ -995,7 +1071,7 @@ function stageEl() {
   el.className = "stage";
   el.innerHTML = `
     <div class="stage-prize" id="spPrize"></div>
-    <div class="wheel-wrap"><div class="pointer"></div><canvas id="spCanvas" aria-label="Roda undian doorprize"></canvas><div class="hub" id="spHub">GO</div></div>
+    <div class="wheel-wrap"><div class="pointer"></div><canvas id="spCanvas" aria-label="Roda undian doorprize"></canvas><div class="hub" id="spHub">GO</div><div id="spWin"></div></div>
     <div class="stage-status" id="spStatus" aria-live="polite"></div>
     <div class="stage-foot"><span id="spPool"></span><span>•</span><span id="spNet">Menghubungkan…</span><button id="spSound" type="button">Suara: mati</button></div>`;
   SP.el = el; SP.cv = el.querySelector("canvas");
@@ -1020,7 +1096,7 @@ function wheelModel() {
     const rf = c.turns * 2 * Math.PI + (((1.5 * Math.PI - thw) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
     const t = (sNow() - c.startAt) / c.dur;
     if (t < 0) return { names:c.names, rot:0, phase:"count", left: Math.ceil(-t * c.dur / 1000), c };
-    if (t < 1) return { names:c.names, rot: rf * (1 - Math.pow(1 - t, 4)), phase:"spin", c };
+    if (t < 1) return { names:c.names, rot: rf * spinEase(t), phase:"spin", t, c };
     return { names:c.names, rot:rf, phase:"done", win:c.winnerIdx, c };
   }
   return { names: st.pool, rot:0, phase: st.announce ? "ready" : "idle" };
@@ -1071,8 +1147,10 @@ function drawStage(force) {
   // teks
   const st = SP.st;
   const prize = m.c ? m.c.prize : st?.announce?.prize;
+  const pimg = m.c ? m.c.img : st?.announce?.img;
+  if (pimg && SP.preload !== pimg) { SP.preload = pimg; new Image().src = pimg; }
   const pz = SP.el.querySelector("#spPrize");
-  const pzHtml = prize ? `<small>${m.c ? "Hadiah" : "Hadiah berikutnya"}</small><b>${esc(prize)}</b>` : `<small>Hadiah berikutnya</small><b style="color:#fff">Belum diumumkan</b>`;
+  const pzHtml = prize ? `${pimg && m.phase !== "done" ? `<img class="pz-img" src="${esc(pimg)}" alt="">` : ""}<small>${m.c ? "Hadiah" : "Hadiah berikutnya"}</small><b>${esc(prize)}</b>` : `<small>Hadiah berikutnya</small><b style="color:#fff">Belum diumumkan</b>`;
   if (pz.dataset.h !== pzHtml) { pz.innerHTML = pzHtml; pz.dataset.h = pzHtml; }
   const stEl = SP.el.querySelector("#spStatus");
   let html = "", cls = "stage-status";
@@ -1080,9 +1158,14 @@ function drawStage(force) {
   else if (m.phase === "idle") html = `<span class="lbl">Panitia akan mengumumkan hadiah berikutnya</span>`;
   else if (m.phase === "ready") html = `<span class="big">Siap diputar</span><span class="lbl">${n} nama di roda</span>`;
   else if (m.phase === "count") html = `<span class="big">${m.left}</span><span class="lbl">Roda akan berputar</span>`;
-  else if (m.phase === "spin") html = `<span class="big">Memutar…</span><span class="lbl">Siapa yang beruntung?</span>`;
+  else if (m.phase === "spin") html = m.t < 0.45 ? `<span class="big">Memutar…</span><span class="lbl">Siapa yang beruntung?</span>`
+    : m.t < 0.75 ? `<span class="big">Mulai pelan…</span><span class="lbl">Siapa yang beruntung?</span>`
+    : `<span class="big suspense">Hampir berhenti…</span><span class="lbl">Tahan napas</span>`;
   else if (m.phase === "done") { cls += " win"; html = `<span class="lbl">Selamat untuk</span><span class="big">${esc(m.names[m.win])}</span>`; }
   if (stEl.dataset.h !== html) { stEl.innerHTML = html; stEl.className = cls; stEl.dataset.h = html; }
+  const wEl = SP.el.querySelector("#spWin");
+  const wHtml = m.phase === "done" ? `<div class="win-card ${m.c.img ? "" : "noimg"}">${m.c.img ? `<img src="${esc(m.c.img)}" alt="${esc(m.c.prize)}">` : ""}<small>Selamat untuk</small><b>${esc(m.names[m.win])}</b><span>${esc(m.c.prize)}</span></div>` : "";
+  if (wEl.dataset.h !== wHtml) { wEl.innerHTML = wHtml; wEl.dataset.h = wHtml; }
   SP.el.querySelector("#spHub").textContent = m.phase === "count" ? m.left : m.phase === "done" ? "★" : "GO";
   SP.el.querySelector("#spPool").textContent = st ? `${st.pool.length} peserta di undian` : "";
 
@@ -1093,6 +1176,7 @@ function drawStage(force) {
     if (S.view === "spin" && !isGuestPath()) renderSpinAdmin();
   }
   if (m.phase === "spin") SP.sawSpin = m.c.id;
+  SP.el.classList.toggle("tense", m.phase === "spin" && m.t > 0.75);
   if (m.phase === "count" || m.phase === "spin") { cancelAnimationFrame(SP.raf); SP.raf = requestAnimationFrame(() => drawStage()); }
 }
 
@@ -1120,7 +1204,7 @@ function winnersHTML(showVoid) {
   const valid = H.filter(h => !h.void).length;
   if (!H.length) return `<div class="empty">Belum ada pemenang.</div>`;
   let k = 0; const nums = H.map(h => h.void ? "" : ++k);
-  return H.map((h, i) => ({ h, n: nums[i] })).reverse().map(({h, n}) => `<div class="li ${h.void?"void":""}"><span class="num">${n||"–"}</span><div class="t"><b>${esc(h.winner)}</b><span>${esc(h.prize)}${h.void?" (batal, tidak hadir)":""}</span></div></div>`).join("") +
+  return H.map((h, i) => ({ h, n: nums[i] })).reverse().map(({h, n}) => `<div class="li ${h.void?"void":""}"><span class="num">${n||"–"}</span>${h.img ? `<img src="${esc(h.img)}" alt="" loading="lazy">` : ""}<div class="t"><b>${esc(h.winner)}</b><span>${esc(h.prize)}${h.void?" (batal, tidak hadir)":""}</span></div></div>`).join("") +
     (showVoid ? "" : `<p class="muted" style="font-size:12px;margin:8px 0 4px">${valid} hadiah sudah diundi. Hadiah asli diserahkan di kantor.</p>`);
 }
 function renderWinners() {
@@ -1167,12 +1251,13 @@ function renderSpinAdmin(force) {
   const prizes = T("hadiah").filter(h => !h.penerima);
   const last = st ? [...st.history].reverse().find(h => !h.void) : null;
   const lastDone = last && last.revealAt <= sNow();
-  const excl = new Set(SP.pendingEx || st?.exclude || []);
+  const excl = new Set(st?.exclude || []);
   const P = T("peserta");
   const link = location.origin + "/spin";
-  const sig = JSON.stringify([st?.v, SP.busy, spinningNow, lastDone, prizes.length, P.length, SP.draftHid]);
+  const ikut = P.filter(ikutDP);
+  const sig = JSON.stringify([st?.v, SP.busy, spinningNow, lastDone, prizes.length, P.map(p => p.nama + ikutDP(p)).join(), SP.draftHid]);
   if (!force && sig === SP.adminSig) return; SP.adminSig = sig;
-  const open = box.querySelector("details[open]") ? true : false;
+  const open = !!SP.poolOpen;
   box.innerHTML = `
     <div class="panel">
       <h4>1. Umumkan hadiah</h4>
@@ -1193,7 +1278,7 @@ function renderSpinAdmin(force) {
     <div class="panel">
       <h4>2. Putar</h4>
       <button class="btn spin" data-act="spGo" ${(!st?.announce||spinningNow||SP.busy||!st?.pool.length)?"disabled":""}>${spinningNow?"BERPUTAR…":"SPIN"}</button>
-      <p class="muted" style="font-size:13px;margin:8px 0 0">${!st?.announce ? "Umumkan hadiah dulu untuk mengaktifkan SPIN." : `Ada hitung mundur 3 detik supaya semua HP sempat bersiap. ${st.pool.length} nama di roda.`}</p>
+      <p class="muted" style="font-size:13px;margin:8px 0 0">${!st?.announce ? "Umumkan hadiah dulu untuk mengaktifkan SPIN." : `Hitung mundur 3 detik, lalu roda berputar sekitar 15 detik. ${st.pool.length} nama di roda.`}</p>
       ${last && lastDone ? `<div class="row" style="margin-top:12px"><span style="flex:1;font-size:14px">Terakhir: <b>${esc(last.winner)}</b> (${esc(last.prize)})</span><button class="btn sm" data-act="spVoid" data-id="${esc(last.id)}" ${SP.busy||spinningNow?"disabled":""}>Tidak hadir, putar ulang</button></div>` : ""}
     </div>
     <div class="panel">
@@ -1202,10 +1287,11 @@ function renderSpinAdmin(force) {
       <div class="row"><input class="inp" readonly value="${esc(link)}" onclick="this.select()"><button class="btn sm" data-act="spCopy">${icon("copy")} Salin</button><button class="btn sm" data-act="spQR">QR</button></div>
       <div id="spQRBox"></div>
     </div>
-    <details class="panel" ${open?"open":""}>
-      <summary style="cursor:pointer;font-weight:800">Peserta ikut undian (${P.length - excl.size} dari ${P.length})</summary>
-      <p class="muted" style="font-size:13px;margin:8px 0 0">Hilangkan centang untuk yang tidak ikut diundi (misalnya anak kecil). Yang sudah menang otomatis keluar dari roda.</p>
-      <div class="pool">${P.map(p => `<label><input type="checkbox" data-act="spEx" value="${esc(p.id)}" ${excl.has(p.id)?"":"checked"} ${SP.busy?"disabled":""}> ${esc(p.nama)}</label>`).join("")}</div>
+    <details class="panel" ${open?"open":""} ontoggle="SP.poolOpen=this.open">
+      <summary style="cursor:pointer;font-weight:800">Peserta ikut doorprize (${ikut.length} dari ${P.length})</summary>
+      <p class="muted" style="font-size:13px;margin:8px 0 0">Sama dengan kolom "Ikut doorprize" di menu Peserta. Keluarga (anak, pasangan) otomatis tidak ikut, bisa diubah di sini. Yang sudah menang otomatis keluar dari roda.</p>
+      <div class="pool">${P.map(p => `<label><input type="checkbox" data-act="spDP" value="${esc(p.id)}" ${ikutDP(p)?"checked":""}> ${esc(p.nama)}${p.status==="Keluarga"?' <span class="pill" style="font-size:11px">Keluarga</span>':""}</label>`).join("")}</div>
+      ${excl.size ? `<p style="font-weight:700;margin:12px 0 4px;font-size:14px">Keluar dari roda karena tidak hadir</p>${[...excl].map(id => { const p = byId("peserta", id); return p ? `<div class="row" style="padding:4px 0"><span style="flex:1">${esc(p.nama)}</span><button class="btn sm" data-act="spUnex" data-id="${esc(id)}" ${SP.busy?"disabled":""}>Masukkan lagi</button></div>` : ""; }).join("")}` : ""}
     </details>
     <div class="panel">
       <h4>Riwayat undian</h4>
@@ -1217,10 +1303,10 @@ function renderSpinAdmin(force) {
 document.addEventListener("change", e => {
   const t = e.target;
   if (t.id === "spPick") { SP.draftHid = t.value; renderSpinAdmin(true); if (t.value === "__lain") setTimeout(() => $("#spCustom")?.focus(), 30); }
-  if (t.dataset?.act === "spEx") {
-    const ex = [...document.querySelectorAll('input[data-act="spEx"]')].filter(x => !x.checked).map(x => x.value);
-    SP.pendingEx = ex;
-    spinApi("exclude", { exclude: ex }).finally(() => { SP.pendingEx = null; renderSpinAdmin(true); });
+  if (t.dataset?.act === "spDP") {
+    const p = byId("peserta", t.value); if (!p) return;
+    push({ op:"update", table:"peserta", id:p.id, changes:{ doorprize: t.checked ? "Ya" : "Tidak" }, label:p.nama, tableLabel:"Peserta", fieldLabels: fieldLabels("peserta") });
+    S.afterFlush = refreshSpin;
   }
 });
 document.addEventListener("input", e => { if (e.target.id === "spCustom") SP.draftPrize = e.target.value; });
@@ -1235,6 +1321,7 @@ document.addEventListener("click", e => {
     spinApi("announce", { prize, hadiahId: hid === "__lain" ? "" : hid }).then(d => { if (d) { SP.draftHid = ""; SP.draftPrize = ""; renderSpinAdmin(true); } });
   }
   if (a === "spUnannounce") spinApi("announce", { prize:"" });
+  if (a === "spUnex") spinApi("exclude", { exclude: (SP.st?.exclude || []).filter(x => x !== b.dataset.id) });
   if (a === "spGo") spinApi("go");
   if (a === "spVoid") { if (confirm("Batalkan hasil ini? Hadiahnya diumumkan lagi dan orang tersebut keluar dari roda.")) spinApi("void", { id: b.dataset.id }); }
   if (a === "spReset") { if (confirm("Kosongkan semua hasil spinwheel? Nama penerima di Hadiah ikut dikosongkan. Pakai ini setelah uji coba.")) spinApi("reset", { confirm:"RESET" }); }
@@ -1290,8 +1377,10 @@ function sheet(title, body, foot, autofocus) {
   document.body.style.overflow = "hidden";
   if (autofocus) setTimeout(() => $("#layer .sheet-b input:not([readonly]), #layer .sheet-b select, #layer .sheet-b textarea")?.focus({preventScroll:true}), 60);
 }
-function fieldHTML(c, v) {
+function fieldHTML(c, v, row) {
   const id = "f_" + c.k;
+  if (c.t === "image") return `<div class="fld"><span style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--muted)">Foto hadiah</span>
+    <div class="imgfield" id="imgField">${imgFieldInner(row.id, v)}</div><input type="hidden" name="${c.k}" value="${esc(v)}"></div>`;
   const lab = `<span>${esc(c.l)}${c.req?" *":""}</span>`;
   if (c.t === "ro" || c.t === "calc") return "";
   let inp;
@@ -1307,13 +1396,14 @@ function fieldHTML(c, v) {
 }
 function openForm(key, id, preset) {
   const d = DEF[key]; const isNew = !id;
-  const row = isNew ? { ...(preset||{}) } : (rowsOf(key).find(r => r.id === id) || preset || { id });
+  const row = isNew ? { id: uid(d.prefix), ...(preset||{}) } : { ...(rowsOf(key).find(r => r.id === id) || preset || { id }) };
+  d.cols.forEach(c => { if (c.def && !row[c.k]) row[c.k] = c.def(row); });
   if (key === "kamar") Object.assign(row, { ...(preset||{}), ...(byId("kamar", id)||{}) });
   const ro = d.cols.filter(c => c.t === "ro" || c.t === "calc").filter(c => row[c.k] !== undefined && !(c.t==="calc"));
   const title = isNew ? `Tambah ${d.label.toLowerCase()}` : (key === "kamar" ? "Kamar " + row.no : (row[d.title] || d.label));
   const body = `<form id="frm" data-t="${key}" data-id="${esc(id||"")}">
     ${ro.map(c => `<div class="fld"><span style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--muted)">${esc(c.l)}</span><div class="ro">${esc(row[c.k]||"–")}</div></div>`).join("")}
-    ${d.cols.map(c => fieldHTML(c, row[c.k] ?? "")).join("")}
+    ${d.cols.map(c => fieldHTML(c, row[c.k] ?? "", row)).join("")}
     ${!isNew ? lastChange(key, row) : ""}
   </form>`;
   const foot = `${(!isNew && !d.noDel) ? `<button class="btn danger" data-act="del" data-t="${key}" data-id="${esc(id)}">Hapus</button>` : ""}
@@ -1344,14 +1434,16 @@ function saveForm() {
   const miss = d.cols.find(c => c.req && el(f, c.k) && !vals[c.k]);
   if (miss) { toast(`${miss.l} wajib diisi`); f.elements[miss.k].focus(); return; }
   if (!id) {
-    const row = { id: uid(d.prefix), ...orig, ...vals };
+    const row = { ...orig, ...vals, id: orig.id || uid(d.prefix) };
     push({ op:"add", table:key, row, label: rowLabel(key, row), tableLabel: tblLabel(key) });
+    if (key === "hadiah" || key === "peserta") S.afterFlush = refreshSpin;
     toast(`${d.label} ditambahkan`);
   } else {
     const changes = {}; Object.entries(vals).forEach(([k,v]) => { if ((orig[k] ?? "") !== v) changes[k] = v; });
     if (!Object.keys(changes).length) { closeLayer(); return; }
     if (key === "kamar") changes.no = orig.no;
     push({ op:"update", table:key, id, changes, label: rowLabel(key, {...orig, ...vals}), tableLabel: tblLabel(key), fieldLabels: fieldLabels(key) });
+    if (key === "hadiah" || key === "peserta") S.afterFlush = refreshSpin;
     toast("Perubahan disimpan");
   }
   closeLayer();
@@ -1440,6 +1532,7 @@ document.addEventListener("change", e => {
   if (a === "quick") {
     const t = b.dataset.t, id = b.dataset.id, row = byId(t, id) || { id };
     push({ op:"update", table:t, id, changes:{ [b.dataset.k]: b.value }, label: rowLabel(t,row), tableLabel: tblLabel(t), fieldLabels: fieldLabels(t) });
+    if (t === "peserta") S.afterFlush = refreshSpin;
   }
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#layer").innerHTML) closeLayer(); });
