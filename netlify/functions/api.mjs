@@ -98,6 +98,115 @@ function applyOps(db, ops) {
   return entries;
 }
 
+
+/* ================= Spinwheel doorprize =================
+   Server yang memilih pemenang dan jam mulai putaran (startAt).
+   Semua HP memutar roda yang sama mengikuti jam server, jadi hasilnya tampil serentak. */
+const SPIN_KEY = "spin";
+const SPIN_DUR = 9000;      // lama putaran (ms)
+const SPIN_LEAD = 3000;     // hitung mundur sebelum roda berputar (ms)
+const SPIN_EMPTY = { v: 0, announce: null, current: null, history: [], exclude: [], pool: [] };
+
+function randInt(n) {
+  const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n;
+}
+function buildPool(db, spin) {
+  const won = new Set(spin.history.filter((h) => !h.void).map((h) => h.pid));
+  const ex = new Set(spin.exclude);
+  return (db.tables.peserta || []).filter((p) => p.nama && !won.has(p.id) && !ex.has(p.id)).map((p) => ({ id: p.id, nama: p.nama }));
+}
+const spinPublic = (s) => ({
+  v: s.v, now: Date.now(), announce: s.announce && { prize: s.announce.prize }, pool: s.pool.map((p) => p.nama), exclude: s.exclude,
+  current: s.current && { id: s.current.id, prize: s.current.prize, names: s.current.names, winnerIdx: s.current.winnerIdx,
+    jitter: s.current.jitter, turns: s.current.turns, startAt: s.current.startAt, dur: s.current.dur },
+  history: s.history.map((h) => ({ id: h.id, prize: h.prize, winner: h.winner, revealAt: h.revealAt, void: !!h.void })),
+});
+const spinning = (s) => s.current && Date.now() < s.current.startAt + s.current.dur;
+
+async function addLog(st, entries) {
+  const t = new Date().toISOString();
+  await mutate(st, "log", [], (log) => {
+    log.push(...entries.map((e, i) => ({ id: Date.now().toString(36) + "s" + i, t, changes: [], ...e })));
+    if (log.length > LOG_MAX) log.splice(0, log.length - LOG_MAX);
+  });
+}
+async function setHadiah(st, hadiahId, penerima, kartu) {
+  if (!hadiahId) return;
+  await mutate(st, "db", SEED, (d) => {
+    const h = (d.tables.hadiah || []).find((x) => x.id === hadiahId);
+    if (!h) return false;
+    h.penerima = penerima; h.kartu = kartu; d.rev = (d.rev || 0) + 1;
+  });
+}
+
+async function spinRoute(st, route, req, user) {
+  // Layar penonton: tanpa password, hanya nama peserta & hasil undian.
+  if (route === "spin/state") {
+    const s = (await read(st, SPIN_KEY, SPIN_EMPTY)).data;
+    if (!s.v) s.pool = buildPool((await read(st, "db", SEED)).data, s); // belum pernah disentuh admin
+    const v = Number(new URL(req.url).searchParams.get("v") || -1);
+    if (v === s.v) return json({ v: s.v, now: Date.now(), same: 1 });
+    return json(spinPublic(s));
+  }
+  if (!user) return null; // rute admin di bawah butuh login tim
+  const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+  const db = (await read(st, "db", SEED)).data;
+  let err = null, logs = [], hadiahOps = [];
+
+  const s = await mutate(st, SPIN_KEY, SPIN_EMPTY, (s) => {
+    err = null; logs = []; hadiahOps = [];
+    if (route === "spin/refresh") { /* hitung ulang daftar peserta */ }
+    else if (route === "spin/announce") {
+      const prize = clean(body.prize).slice(0, 80).trim();
+      if (spinning(s)) { err = "Tunggu roda berhenti dulu"; return false; }
+      s.announce = prize ? { prize, hadiahId: clean(body.hadiahId), by: user } : null;
+    }
+    else if (route === "spin/exclude") {
+      s.exclude = Array.isArray(body.exclude) ? body.exclude.map(clean).slice(0, 200) : s.exclude;
+    }
+    else if (route === "spin/go") {
+      if (spinning(s)) { err = "Roda masih berputar"; return false; }
+      if (!s.announce) { err = "Umumkan hadiahnya dulu"; return false; }
+      const pool = buildPool(db, s);
+      if (!pool.length) { err = "Tidak ada peserta tersisa di undian"; return false; }
+      const wi = randInt(pool.length);
+      const startAt = Date.now() + SPIN_LEAD;
+      const id = Date.now().toString(36) + randInt(1e6).toString(36);
+      s.current = { id, prize: s.announce.prize, hadiahId: s.announce.hadiahId, names: pool.map((p) => p.nama),
+        winnerIdx: wi, jitter: (randInt(1000) / 1000 - 0.5) * 0.7, turns: 6 + randInt(3), startAt, dur: SPIN_DUR, by: user };
+      s.history.push({ id, prize: s.announce.prize, hadiahId: s.announce.hadiahId, pid: pool[wi].id, winner: pool[wi].nama,
+        by: user, t: new Date().toISOString(), revealAt: startAt + SPIN_DUR });
+      logs = [{ user, table: "hadiah", tableLabel: "Spinwheel", action: "spin", label: `${s.announce.prize}: ${pool[wi].nama}` }];
+      hadiahOps = [[s.announce.hadiahId, pool[wi].nama, "✓"]];
+      s.announce = null;
+    }
+    else if (route === "spin/void") {
+      if (spinning(s)) { err = "Tunggu roda berhenti dulu"; return false; }
+      const h = s.history.find((x) => x.id === body.id && !x.void);
+      if (!h) { err = "Hasil tidak ditemukan"; return false; }
+      h.void = true;
+      if (!s.exclude.includes(h.pid)) s.exclude.push(h.pid);
+      s.announce = { prize: h.prize, hadiahId: h.hadiahId, by: user };
+      if (s.current && s.current.id === h.id) s.current = null;
+      logs = [{ user, table: "hadiah", tableLabel: "Spinwheel", action: "batal", label: `${h.prize}: ${h.winner} (tidak hadir)` }];
+      hadiahOps = [[h.hadiahId, "", ""]];
+    }
+    else if (route === "spin/reset") {
+      if (body.confirm !== "RESET") { err = "Konfirmasi salah"; return false; }
+      hadiahOps = s.history.filter((h) => !h.void && h.hadiahId).map((h) => [h.hadiahId, "", ""]);
+      s.history = []; s.current = null; s.announce = null; s.exclude = [];
+      logs = [{ user, table: "hadiah", tableLabel: "Spinwheel", action: "reset", label: "Spinwheel dikosongkan (uji coba selesai)" }];
+    }
+    else { err = "Tidak ditemukan"; return false; }
+    s.pool = buildPool(db, s);
+    s.v = (s.v || 0) + 1;
+  });
+  if (err) return json({ error: err }, 409);
+  for (const [hid, nama, kartu] of hadiahOps) await setHadiah(st, hid, nama, kartu);
+  if (logs.length) await addLog(st, logs);
+  return json(spinPublic(s));
+}
+
 export default async (req) => {
   const url = new URL(req.url);
   const route = url.pathname.replace(/^\/api\/?/, "").replace(/\/$/, "");
@@ -105,15 +214,22 @@ export default async (req) => {
   const pass = req.headers.get("x-pass") || "";
   let user = "";
   try { user = decodeURIComponent(req.headers.get("x-user") || "").trim().slice(0, 40); } catch {}
+  const st = store();
+
+  // Layar penonton spinwheel boleh dibuka tanpa login
+  if (route === "spin/state") {
+    try { return await spinRoute(st, route, req, null); } catch (e) { return json({ error: e.message }, 500); }
+  }
+
   if (pass !== PASSWORD()) return json({ error: "Password salah" }, 401);
   if (!user) return json({ error: "Nama wajib diisi" }, 400);
-
-  const st = store();
 
   try {
     if (route === "login") return json({ ok: true });
 
     await upgradeIfNeeded(st, user);
+
+    if (route.startsWith("spin/")) return await spinRoute(st, route, req, user);
 
     if (route === "data" && req.method === "GET") {
       const { data } = await read(st, "db", SEED);

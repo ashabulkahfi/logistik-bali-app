@@ -267,6 +267,49 @@ details.box[open] summary::after{content:"－"}
 .menu a,.menu button{display:flex;align-items:center;gap:12px;width:100%;padding:13px 4px;border:0;background:none;border-bottom:1px solid var(--line);text-align:left;font-weight:600;text-decoration:none;color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + 18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:90vw}
 @media (min-width:960px){.toast{bottom:24px}}
+
+/* ---------- Spinwheel ---------- */
+.stage{background:radial-gradient(120% 80% at 50% 0%, #1D3B57 0%, #12263A 55%, #0C1B29 100%);color:#fff;border-radius:var(--r-lg);padding:18px 16px 20px;display:flex;flex-direction:column;align-items:center;gap:12px;overflow:hidden}
+.stage-prize{text-align:center;min-height:62px}
+.stage-prize small{display:block;font-size:13px;font-weight:600;color:#A9C7D6}
+.stage-prize b{display:block;font:800 clamp(24px,7vw,38px)/1.1 var(--display);letter-spacing:-.5px;color:#F6C453;margin-top:2px}
+.wheel-wrap{position:relative;width:min(100%,460px);aspect-ratio:1}
+.wheel-wrap canvas{width:100%;height:100%;display:block}
+.pointer{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-top:30px solid #fff;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45));z-index:2}
+.hub{position:absolute;left:50%;top:50%;width:19%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:#12263A;border:4px solid #fff;display:grid;place-items:center;font:800 clamp(12px,3.4vw,17px) var(--display);color:#F6C453;text-align:center;line-height:1}
+.stage-status{min-height:76px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.stage-status .big{font:800 clamp(30px,9vw,46px)/1.05 var(--display);letter-spacing:-1px}
+.stage-status .lbl{font-size:14px;color:#A9C7D6;font-weight:600}
+.stage-status.win .big{color:#F6C453;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+.stage-foot{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:13px;color:#A9C7D6}
+.stage-foot button{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px}
+.winners .li .num{font:800 15px var(--display);color:var(--muted);min-width:22px}
+.winners .li.void b{text-decoration:line-through;color:var(--muted)}
+.spin-admin{display:grid;gap:14px;margin-top:14px}
+@media (min-width:1100px){.spin-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:start}.spin-admin{margin-top:0}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.panel h4{font:800 16px var(--display);margin:0 0 10px}
+.btn.spin{width:100%;min-height:64px;font:800 26px var(--display);letter-spacing:1px;background:var(--hibiscus);border-color:var(--hibiscus);color:#fff;border-radius:18px}
+.btn.spin:disabled{opacity:.45;cursor:not-allowed}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row .inp{flex:1;min-width:160px}
+.pool{columns:2 180px;column-gap:16px;margin-top:8px}
+.pool label{display:flex;gap:8px;align-items:center;padding:4px 0;break-inside:avoid;font-size:14px}
+.pool input{width:18px;height:18px;accent-color:var(--lagoon)}
+.qr{background:#fff;padding:10px;border-radius:12px;display:inline-block;margin-top:10px}
+#guest{min-height:100%;background:#0C1B29;padding:14px 12px calc(20px + env(safe-area-inset-bottom,0px))}
+#guest .g-in{max-width:560px;margin:0 auto;display:grid;gap:14px}
+#guest .g-head{color:#fff;display:flex;align-items:center;gap:10px}
+#guest .g-head b{font:800 19px var(--display)}
+#guest .g-head small{display:block;color:#A9C7D6;font-size:12px}
+#guest .g-head a{margin-left:auto;color:#F6C453;font-weight:700;font-size:13px}
+#guest .box{background:#16293B;border-color:#24405A;color:#E6EEF0}
+#guest .box .li{border-color:#24405A}
+#guest .box .t span,#guest .muted{color:#A9C7D6}
+#guest h3.sec{color:#fff;margin:6px 0 0}
+@media (prefers-reduced-motion:reduce){.stage-status.win .big{animation:none}}
 </style>
 </head>
 <body>
@@ -313,6 +356,7 @@ details.box[open] summary::after{content:"－"}
   </div>
   <nav class="bnav" id="bnav"></nav>
 </div>
+<section id="guest" class="hidden"><div class="g-in" id="guestIn"></div></section>
 <div id="layer"></div>
 
 <script>
@@ -338,6 +382,7 @@ const IC = {
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
   mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
+  wheel:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>',
   plus:'<path d="M12 5v14M5 12h14"/>', search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>', down:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', out:'<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
   copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'
@@ -352,6 +397,7 @@ const VIEWS = [
   {k:"bagasi",l:"Bagasi",i:"bag"},
   {k:"properti",l:"Properti",i:"box"},
   {k:"gala",l:"Gala dinner",i:"mic"},
+  {k:"spin",l:"Spinwheel",i:"wheel"},
   {k:"hadiah",l:"Hadiah",i:"gift"},
   {k:"belanja",l:"Belanja",i:"cart"},
   {k:"bawaan",l:"Bawaan peserta",i:"pack"},
@@ -908,9 +954,302 @@ function vLog() {
 
 const RENDER = {
   ringkasan: vRingkasan, peserta: () => vSimple("peserta"), kamar: vKamar, headcount: vHeadcount, bagasi: vBagasi,
-  properti: vProperti, gala: vGala, hadiah: vHadiah, belanja: vBelanja, bawaan: vBawaan, timeline: vTimeline,
+  properti: vProperti, gala: vGala, spin: vSpin, hadiah: vHadiah, belanja: vBelanja, bawaan: vBawaan, timeline: vTimeline,
   kontak: () => vSimple("kontak"), log: vLog,
 };
+
+/* ============ Spinwheel (live di semua HP) ============ */
+const SP = { st:null, v:-1, off:0, rtt:1e9, timer:null, raf:0, el:null, cv:null, size:0, sound:false, ac:null,
+  lastIdx:-1, celebrated:null, poolKey:"", draftPrize:"", draftHid:"", busy:false, adminSig:"" };
+const WHEEL_COLORS = ["#0B6F6A","#E9A520","#C9364F","#1F5C99","#0E8C85","#F2D7A0","#7A3E9D","#2E8B57"];
+const WHEEL_TEXT   = ["#fff","#2A1D00","#fff","#fff","#fff","#2A1D00","#fff","#fff"];
+const sNow = () => Date.now() + SP.off;
+const isGuestPath = () => /^\/spin\/?$/.test(location.pathname);
+
+async function spinPoll() {
+  clearTimeout(SP.timer);
+  if (!SP.el || !document.body.contains(SP.el)) return;
+  const t0 = Date.now();
+  try {
+    const r = await fetch("/api/spin/state?v=" + SP.v, { cache:"no-store" });
+    const d = await r.json(); const t1 = Date.now();
+    const rtt = t1 - t0;
+    if (rtt < SP.rtt * 1.5 || SP.rtt === 1e9) { SP.off = d.now - (t0 + t1) / 2; SP.rtt = Math.min(SP.rtt, rtt); }
+    if (!d.same && d.v !== undefined) applySpin(d);
+    setSpinNet(true);
+  } catch { setSpinNet(false); }
+  SP.timer = setTimeout(spinPoll, document.hidden ? 4000 : 1000);
+}
+function setSpinNet(ok) { const e = document.getElementById("spNet"); if (e) e.textContent = ok ? "Live" : "Menyambung ulang…"; }
+function applySpin(d) {
+  SP.st = d; SP.v = d.v;
+  drawStage(true);
+  if (S.view === "spin" && !isGuestPath()) renderSpinAdmin();
+  renderWinners();
+}
+
+/* ---- tampilan roda ---- */
+function stageEl() {
+  if (SP.el) return SP.el;
+  const el = document.createElement("div");
+  el.className = "stage";
+  el.innerHTML = `
+    <div class="stage-prize" id="spPrize"></div>
+    <div class="wheel-wrap"><div class="pointer"></div><canvas id="spCanvas" aria-label="Roda undian doorprize"></canvas><div class="hub" id="spHub">GO</div></div>
+    <div class="stage-status" id="spStatus" aria-live="polite"></div>
+    <div class="stage-foot"><span id="spPool"></span><span>•</span><span id="spNet">Menghubungkan…</span><button id="spSound" type="button">Suara: mati</button></div>`;
+  SP.el = el; SP.cv = el.querySelector("canvas");
+  el.querySelector("#spSound").addEventListener("click", toggleSound);
+  new ResizeObserver(() => drawStage(true)).observe(el.querySelector(".wheel-wrap"));
+  return el;
+}
+function mountStage(slot) {
+  if (!slot) return;
+  slot.appendChild(stageEl());
+  drawStage(true);
+  if (!SP.timer) spinPoll();
+}
+function stopSpin() { clearTimeout(SP.timer); SP.timer = null; cancelAnimationFrame(SP.raf); SP.raf = 0; }
+
+function wheelModel() {
+  const st = SP.st; if (!st) return { names:[], rot:0, phase:"load" };
+  const c = st.current;
+  if (c && !st.announce) {
+    const n = c.names.length, seg = 2 * Math.PI / n;
+    const thw = (c.winnerIdx + 0.5 + c.jitter) * seg;
+    const rf = c.turns * 2 * Math.PI + (((1.5 * Math.PI - thw) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const t = (sNow() - c.startAt) / c.dur;
+    if (t < 0) return { names:c.names, rot:0, phase:"count", left: Math.ceil(-t * c.dur / 1000), c };
+    if (t < 1) return { names:c.names, rot: rf * (1 - Math.pow(1 - t, 4)), phase:"spin", c };
+    return { names:c.names, rot:rf, phase:"done", win:c.winnerIdx, c };
+  }
+  return { names: st.pool, rot:0, phase: st.announce ? "ready" : "idle" };
+}
+function drawStage(force) {
+  if (!SP.el) return;
+  const m = wheelModel();
+  const wrap = SP.el.querySelector(".wheel-wrap");
+  const css = wrap.clientWidth; if (!css) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (SP.size !== css * dpr) { SP.cv.width = SP.cv.height = css * dpr; SP.size = css * dpr; }
+  const ctx = SP.cv.getContext("2d"); const W = SP.size, R = W / 2 - 4 * dpr;
+  ctx.clearRect(0, 0, W, W);
+  ctx.save(); ctx.translate(W / 2, W / 2);
+  const n = m.names.length;
+  if (!n) {
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, 2 * Math.PI); ctx.fillStyle = "#1D3B57"; ctx.fill();
+  } else {
+    const seg = 2 * Math.PI / n;
+    ctx.rotate(m.rot);
+    const fs = Math.max(9, Math.min(20, 300 / n + 6)) * dpr * (css / 380);
+    for (let i = 0; i < n; i++) {
+      const ci = (n % WHEEL_COLORS.length === 1 && i === n - 1) ? 3 : i % WHEEL_COLORS.length;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, i * seg, (i + 1) * seg); ctx.closePath();
+      ctx.fillStyle = WHEEL_COLORS[ci];
+      ctx.globalAlpha = (m.phase === "done" && i !== m.win) ? 0.28 : 1;
+      ctx.fill();
+      ctx.globalAlpha = 1; ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 1.2 * dpr; ctx.stroke();
+      ctx.save(); ctx.rotate((i + 0.5) * seg);
+      ctx.fillStyle = (m.phase === "done" && i !== m.win) ? "rgba(255,255,255,.55)" : WHEEL_TEXT[ci];
+      ctx.font = `700 ${fs}px "Plus Jakarta Sans", system-ui, sans-serif`;
+      ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      let label = m.names[i]; const maxW = R * 0.66;
+      while (ctx.measureText(label).width > maxW && label.length > 4) label = label.slice(0, -2);
+      if (label !== m.names[i]) label = label.trim() + "…";
+      ctx.fillText(label, R - 12 * dpr, 0);
+      ctx.restore();
+    }
+    // tick saat batas segmen melewati jarum
+    if (m.phase === "spin") {
+      const idx = Math.floor((((1.5 * Math.PI - m.rot) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / seg);
+      if (idx !== SP.lastIdx) { SP.lastIdx = idx; tick(); }
+    }
+  }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(W / 2, W / 2, R, 0, 2 * Math.PI); ctx.lineWidth = 6 * dpr; ctx.strokeStyle = "#fff"; ctx.stroke();
+
+  // teks
+  const st = SP.st;
+  const prize = m.c ? m.c.prize : st?.announce?.prize;
+  const pz = SP.el.querySelector("#spPrize");
+  const pzHtml = prize ? `<small>${m.c ? "Hadiah" : "Hadiah berikutnya"}</small><b>${esc(prize)}</b>` : `<small>Hadiah berikutnya</small><b style="color:#fff">Belum diumumkan</b>`;
+  if (pz.dataset.h !== pzHtml) { pz.innerHTML = pzHtml; pz.dataset.h = pzHtml; }
+  const stEl = SP.el.querySelector("#spStatus");
+  let html = "", cls = "stage-status";
+  if (m.phase === "load") html = `<span class="lbl">Memuat…</span>`;
+  else if (m.phase === "idle") html = `<span class="lbl">Panitia akan mengumumkan hadiah berikutnya</span>`;
+  else if (m.phase === "ready") html = `<span class="big">Siap diputar</span><span class="lbl">${n} nama di roda</span>`;
+  else if (m.phase === "count") html = `<span class="big">${m.left}</span><span class="lbl">Roda akan berputar</span>`;
+  else if (m.phase === "spin") html = `<span class="big">Memutar…</span><span class="lbl">Siapa yang beruntung?</span>`;
+  else if (m.phase === "done") { cls += " win"; html = `<span class="lbl">Selamat untuk</span><span class="big">${esc(m.names[m.win])}</span>`; }
+  if (stEl.dataset.h !== html) { stEl.innerHTML = html; stEl.className = cls; stEl.dataset.h = html; }
+  SP.el.querySelector("#spHub").textContent = m.phase === "count" ? m.left : m.phase === "done" ? "★" : "GO";
+  SP.el.querySelector("#spPool").textContent = st ? `${st.pool.length} peserta di undian` : "";
+
+  if (m.phase === "done" && SP.celebrated !== m.c.id) {
+    // fanfare hanya untuk yang menonton putarannya, bukan yang baru membuka halaman
+    if (SP.sawSpin === m.c.id) fanfare();
+    SP.celebrated = m.c.id; renderWinners();
+    if (S.view === "spin" && !isGuestPath()) renderSpinAdmin();
+  }
+  if (m.phase === "spin") SP.sawSpin = m.c.id;
+  if (m.phase === "count" || m.phase === "spin") { cancelAnimationFrame(SP.raf); SP.raf = requestAnimationFrame(() => drawStage()); }
+}
+
+/* ---- suara (opsional, harus diaktifkan per HP) ---- */
+function toggleSound() {
+  SP.sound = !SP.sound;
+  if (SP.sound && !SP.ac) { try { SP.ac = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
+  SP.ac?.resume?.();
+  SP.el.querySelector("#spSound").textContent = "Suara: " + (SP.sound ? "nyala" : "mati");
+  if (SP.sound) tick();
+}
+function beep(freq, dur, vol = 0.08, type = "square", at = 0) {
+  if (!SP.sound || !SP.ac) return;
+  const t = SP.ac.currentTime + at, o = SP.ac.createOscillator(), g = SP.ac.createGain();
+  o.type = type; o.frequency.value = freq; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(SP.ac.destination); o.start(t); o.stop(t + dur);
+}
+const tick = () => beep(1400, 0.03, 0.05);
+const fanfare = () => [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.22, 0.09, "triangle", i * 0.13));
+
+/* ---- daftar pemenang ---- */
+function winnersHTML(showVoid) {
+  const st = SP.st; if (!st) return "";
+  const H = st.history.filter(h => h.revealAt <= sNow() && (showVoid || !h.void));
+  const valid = H.filter(h => !h.void).length;
+  if (!H.length) return `<div class="empty">Belum ada pemenang.</div>`;
+  let k = 0; const nums = H.map(h => h.void ? "" : ++k);
+  return H.map((h, i) => ({ h, n: nums[i] })).reverse().map(({h, n}) => `<div class="li ${h.void?"void":""}"><span class="num">${n||"–"}</span><div class="t"><b>${esc(h.winner)}</b><span>${esc(h.prize)}${h.void?" (batal, tidak hadir)":""}</span></div></div>`).join("") +
+    (showVoid ? "" : `<p class="muted" style="font-size:12px;margin:8px 0 4px">${valid} hadiah sudah diundi. Hadiah asli diserahkan di kantor.</p>`);
+}
+function renderWinners() {
+  document.querySelectorAll("[data-winners]").forEach(el => { const h = winnersHTML(el.dataset.winners === "all"); if (el.dataset.h !== h) { el.innerHTML = h; el.dataset.h = h; } });
+}
+
+/* ---- halaman penonton (tanpa login) ---- */
+function bootGuest() {
+  $("#login").classList.add("hidden"); $("#shell").classList.add("hidden"); $("#guest").classList.remove("hidden");
+  document.body.style.background = "#0C1B29";
+  const loggedIn = localStorage.getItem("lg_pass");
+  $("#guestIn").innerHTML = `
+    <div class="g-head"><div><b>Doorprize Gala Dinner</b><small>Gathering DTK x PERKOP, Jimbaran</small></div>${loggedIn?`<a href="/" onclick="localStorage.setItem('lg_view','spin')">Panel admin</a>`:""}</div>
+    <div id="stageSlot"></div>
+    <h3 class="sec">Pemenang</h3>
+    <div class="box winners" data-winners="valid"></div>`;
+  mountStage($("#stageSlot"));
+  setInterval(() => drawStage(true), 1000);
+}
+
+/* ---- panel admin ---- */
+function vSpin() {
+  return header("Spinwheel doorprize", "Kamu yang menekan SPIN, semua orang menonton di HP masing-masing lewat link penonton. Pemenang otomatis tercatat di Hadiah.") + `
+  <div class="spin-grid">
+    <div><div id="stageSlot"></div></div>
+    <div class="spin-admin" id="spinAdmin"></div>
+  </div>`;
+}
+async function spinApi(route, body) {
+  if (SP.busy) return; SP.busy = true; renderSpinAdmin(true);
+  try {
+    const d = await api("spin/" + route, { method:"POST", body: JSON.stringify(body || {}) });
+    applySpin(d);
+    if (["go","void","reset"].includes(route)) setTimeout(() => load(true), 300);
+    return d;
+  } catch (e) { toast(e.message); }
+  finally { SP.busy = false; renderSpinAdmin(true); }
+}
+function renderSpinAdmin(force) {
+  const box = $("#spinAdmin"); if (!box || !S.db) return;
+  const st = SP.st;
+  const m = wheelModel();
+  const spinningNow = m.phase === "count" || m.phase === "spin";
+  const prizes = T("hadiah").filter(h => !h.penerima);
+  const last = st ? [...st.history].reverse().find(h => !h.void) : null;
+  const lastDone = last && last.revealAt <= sNow();
+  const excl = new Set(SP.pendingEx || st?.exclude || []);
+  const P = T("peserta");
+  const link = location.origin + "/spin";
+  const sig = JSON.stringify([st?.v, SP.busy, spinningNow, lastDone, prizes.length, P.length, SP.draftHid]);
+  if (!force && sig === SP.adminSig) return; SP.adminSig = sig;
+  const open = box.querySelector("details[open]") ? true : false;
+  box.innerHTML = `
+    <div class="panel">
+      <h4>1. Umumkan hadiah</h4>
+      ${st?.announce ? `<p style="margin:0 0 10px">Tampil di semua HP: <b>${esc(st.announce.prize)}</b></p>` : `<p class="muted" style="margin:0 0 10px;font-size:14px">Pilih hadiah, lalu umumkan supaya semua orang tahu apa yang diundi.</p>`}
+      <div class="row">
+        <select class="inp" id="spPick">
+          <option value="">Pilih hadiah (${prizes.length} belum ada pemenang)</option>
+          ${prizes.map(h => `<option value="${esc(h.id)}" ${SP.draftHid===h.id?"selected":""}>${esc(h.hadiah)} (${esc(h.asal)})</option>`).join("")}
+          <option value="__lain" ${SP.draftHid==="__lain"?"selected":""}>Hadiah lain (ketik sendiri)</option>
+        </select>
+      </div>
+      <div class="row ${SP.draftHid==="__lain"?"":"hidden"}" style="margin-top:8px"><input class="inp" id="spCustom" maxlength="80" placeholder="Nama hadiah" value="${esc(SP.draftPrize)}"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn pri" data-act="spAnnounce" ${SP.busy||spinningNow?"disabled":""}>Umumkan ke semua HP</button>
+        ${st?.announce ? `<button class="btn" data-act="spUnannounce" ${SP.busy||spinningNow?"disabled":""}>Batalkan</button>` : ""}
+      </div>
+    </div>
+    <div class="panel">
+      <h4>2. Putar</h4>
+      <button class="btn spin" data-act="spGo" ${(!st?.announce||spinningNow||SP.busy||!st?.pool.length)?"disabled":""}>${spinningNow?"BERPUTAR…":"SPIN"}</button>
+      <p class="muted" style="font-size:13px;margin:8px 0 0">${!st?.announce ? "Umumkan hadiah dulu untuk mengaktifkan SPIN." : `Ada hitung mundur 3 detik supaya semua HP sempat bersiap. ${st.pool.length} nama di roda.`}</p>
+      ${last && lastDone ? `<div class="row" style="margin-top:12px"><span style="flex:1;font-size:14px">Terakhir: <b>${esc(last.winner)}</b> (${esc(last.prize)})</span><button class="btn sm" data-act="spVoid" data-id="${esc(last.id)}" ${SP.busy||spinningNow?"disabled":""}>Tidak hadir, putar ulang</button></div>` : ""}
+    </div>
+    <div class="panel">
+      <h4>Link penonton</h4>
+      <p class="muted" style="font-size:14px;margin:0 0 8px">Bagikan ke grup WA atau tunjukkan QR. Bisa dibuka tanpa password, hanya berisi roda dan daftar pemenang.</p>
+      <div class="row"><input class="inp" readonly value="${esc(link)}" onclick="this.select()"><button class="btn sm" data-act="spCopy">${icon("copy")} Salin</button><button class="btn sm" data-act="spQR">QR</button></div>
+      <div id="spQRBox"></div>
+    </div>
+    <details class="panel" ${open?"open":""}>
+      <summary style="cursor:pointer;font-weight:800">Peserta ikut undian (${P.length - excl.size} dari ${P.length})</summary>
+      <p class="muted" style="font-size:13px;margin:8px 0 0">Hilangkan centang untuk yang tidak ikut diundi (misalnya anak kecil). Yang sudah menang otomatis keluar dari roda.</p>
+      <div class="pool">${P.map(p => `<label><input type="checkbox" data-act="spEx" value="${esc(p.id)}" ${excl.has(p.id)?"":"checked"} ${SP.busy?"disabled":""}> ${esc(p.nama)}</label>`).join("")}</div>
+    </details>
+    <div class="panel">
+      <h4>Riwayat undian</h4>
+      <div class="winners" data-winners="all"></div>
+      <div class="row" style="margin-top:10px"><button class="btn sm danger" data-act="spReset" ${SP.busy||spinningNow?"disabled":""}>Kosongkan (setelah uji coba)</button></div>
+    </div>`;
+  renderWinners();
+}
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.id === "spPick") { SP.draftHid = t.value; renderSpinAdmin(true); if (t.value === "__lain") setTimeout(() => $("#spCustom")?.focus(), 30); }
+  if (t.dataset?.act === "spEx") {
+    const ex = [...document.querySelectorAll('input[data-act="spEx"]')].filter(x => !x.checked).map(x => x.value);
+    SP.pendingEx = ex;
+    spinApi("exclude", { exclude: ex }).finally(() => { SP.pendingEx = null; renderSpinAdmin(true); });
+  }
+});
+document.addEventListener("input", e => { if (e.target.id === "spCustom") SP.draftPrize = e.target.value; });
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const a = b.dataset.act;
+  if (a === "spAnnounce") {
+    const hid = SP.draftHid;
+    if (!hid) return toast("Pilih hadiah dulu");
+    const prize = hid === "__lain" ? SP.draftPrize.trim() : (byId("hadiah", hid)?.hadiah || "");
+    if (!prize) return toast("Tulis nama hadiahnya");
+    spinApi("announce", { prize, hadiahId: hid === "__lain" ? "" : hid }).then(d => { if (d) { SP.draftHid = ""; SP.draftPrize = ""; renderSpinAdmin(true); } });
+  }
+  if (a === "spUnannounce") spinApi("announce", { prize:"" });
+  if (a === "spGo") spinApi("go");
+  if (a === "spVoid") { if (confirm("Batalkan hasil ini? Hadiahnya diumumkan lagi dan orang tersebut keluar dari roda.")) spinApi("void", { id: b.dataset.id }); }
+  if (a === "spReset") { if (confirm("Kosongkan semua hasil spinwheel? Nama penerima di Hadiah ikut dikosongkan. Pakai ini setelah uji coba.")) spinApi("reset", { confirm:"RESET" }); }
+  if (a === "spCopy") { const link = location.origin + "/spin"; (navigator.clipboard?.writeText(link) || Promise.reject()).then(() => toast("Link disalin")).catch(() => toast(link)); }
+  if (a === "spQR") showQR();
+});
+async function showQR() {
+  const box = $("#spQRBox"); if (!box) return;
+  if (box.innerHTML) { box.innerHTML = ""; return; }
+  try {
+    if (!window.QRCode) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js");
+    box.innerHTML = `<div class="qr"></div>`;
+    new QRCode(box.firstChild, { text: location.origin + "/spin", width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+  } catch { toast("Gagal memuat QR. Cek koneksi."); }
+}
 
 /* ============ Render shell ============ */
 function render() {
@@ -928,10 +1267,15 @@ function render() {
   if (a && a.dataset && a.dataset.act === "search") focus = { t:a.dataset.t, s:a.selectionStart };
   const sx = $("#cps")?.scrollLeft;
   $("#main").innerHTML = (RENDER[S.view] || vRingkasan)();
+  if (S.view === "spin") {
+    mountStage($("#stageSlot")); renderSpinAdmin(true);
+    if (!SP.refreshed) { SP.refreshed = true; api("spin/refresh", { method:"POST", body:"{}" }).then(applySpin).catch(() => {}); }
+  }
   if (focus) { const el = document.querySelector(`input[data-act="search"][data-t="${focus.t}"]`); if (el) { el.focus(); el.setSelectionRange(focus.s, focus.s); } }
   const cps = $("#cps"); if (cps) { if (sx != null) cps.scrollLeft = sx; else cps.querySelector(".on")?.scrollIntoView({inline:"center",block:"nearest"}); }
 }
 function go(v) {
+  if (S.view === "spin" && v !== "spin") stopSpin();
   S.view = v; localStorage.setItem("lg_view", v);
   if (v === "log") S.log = null;
   closeLayer(); render(); window.scrollTo(0,0);
@@ -1166,7 +1510,7 @@ async function start() {
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden && S.pass) load(); });
 
-if (S.user && S.pass) start(); else logout();
+if (isGuestPath()) bootGuest(); else if (S.user && S.pass) start(); else logout();
 </script>
 </body>
 </html>

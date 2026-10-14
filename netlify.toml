@@ -4,3 +4,9 @@
 
 [functions]
   node_bundler = "esbuild"
+
+# Layar penonton spinwheel (tanpa login)
+[[redirects]]
+  from = "/spin"
+  to = "/index.html"
+  status = 200
