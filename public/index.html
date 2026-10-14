@@ -554,7 +554,7 @@ const DEF = {
       {k:"jk",l:"JK",t:"select",o:["Pria","Wanita","-"]},
       {k:"pergi",l:"Pesawat pergi",t:"select",o:PERGI,hm:1},
       {k:"pulang",l:"Pesawat pulang",t:"select",o:PULANG},
-      {k:"kamar",l:"Kamar",t:"select",o:["",...Array.from({length:16},(_,i)=>String(i+1))]},
+      {k:"kamar",l:"Kamar",t:"select",get o(){ return ["", ...roomNos()]; }},
       {k:"ketKamar",l:"Keterangan kamar",hide:1},
       {k:"hp",l:"No. HP / WA",t:"tel"},
       {k:"kelompok",l:"Klp",t:"select",o:["","1","2","3","4"],hm:1},
@@ -859,7 +859,7 @@ function vKamar() {
   const noRoom = T("peserta").filter(p => !p.kamar);
   const kt = used.filter(r => r.kunciTerima).length, kk = used.filter(r => r.kunciKembali).length;
   const mem = m => `<li class="mem" data-act="member" data-id="${esc(m.id)}" data-pid="${esc(m.id)}"><span class="grip" aria-hidden="true">⋮⋮</span>${jkBadge(m.jk)}<span class="nm">${esc(m.nama)}</span><small class="muted">${esc(m.divisi)}</small></li>`;
-  return header("Pembagian kamar", "Seret nama (pegang ⋮⋮) ke kamar lain untuk pindah, atau ketuk nama untuk pindah/tukar lewat pilihan. Centang kunci saat check-in (Day 1 ±22.30) dan check-out (Day 3, 08.00-09.00).") + `
+  return header("Pembagian kamar", "Seret nama (pegang ⋮⋮) ke kamar lain untuk pindah, atau ketuk nama untuk pindah/tukar lewat pilihan. Centang kunci saat check-in (Day 1 ±22.30) dan check-out (Day 3, 08.00-09.00).", `<button class="btn pri sm" data-act="roomNew">${icon("plus")} Tambah kamar</button>`) + `
   <div class="chips">
     <span class="chip"><b>${used.length}</b> kamar terpakai</span>
     <span class="chip ${noRoom.length?"bad":"good"}"><b>${noRoom.length}</b> belum dapat kamar</span>
@@ -922,6 +922,10 @@ document.addEventListener("click", e => {
   const a = b.dataset.act;
   if (a === "member") { if (DRAG.justDropped) return; memberSheet(b.dataset.id); }
   if (a === "roomAdd") roomAddSheet(b.dataset.no);
+  if (a === "roomNew") {
+    const nos = roomList().map(r => Number(r.no)).filter(n => !isNaN(n));
+    openForm("kamar", null, { no: String(Math.max(0, ...nos) + 1), tipe: "Twin", noHotel: "", kunciTerima: "", kunciKembali: "", catatan: "" });
+  }
   if (a === "mvGo") { moveTo(b.dataset.id, $("#mvRoom").value); closeLayer(); }
   if (a === "swGo") { const w = $("#swWith").value; if (!w) return toast("Pilih peserta dulu"); swapRooms(b.dataset.id, w); closeLayer(); }
   if (a === "addGo") { const w = $("#addWho").value; if (!w) return toast("Pilih peserta dulu"); moveTo(w, b.dataset.no); closeLayer(); }
@@ -1534,7 +1538,8 @@ function openForm(key, id, preset) {
     ${key === "peserta" && isAdmin() ? accessSection(row.id, row.nama, isNew) : ""}
     ${!isNew ? lastChange(key, row) : ""}
   </form>`;
-  const foot = `${(!isNew && !d.noDel) ? `<button class="btn danger" data-act="del" data-t="${key}" data-id="${esc(id)}">Hapus</button>` : ""}
+  const canDel = !isNew && (!d.noDel || (key === "kamar" && !T("peserta").some(p => p.kamar === row.no)));
+  const foot = `${canDel ? `<button class="btn danger" data-act="del" data-t="${key}" data-id="${esc(id)}">Hapus</button>` : ""}
     <button class="btn" data-act="close">Batal</button>
     <button class="btn pri" data-act="save">${isNew ? "Tambah" : "Simpan perubahan"}</button>`;
   sheet(title, body, foot, isNew);

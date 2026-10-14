@@ -83,4 +83,5 @@ curl -X POST https://NAMA-SITE.netlify.app/api/reset \
   Bawa ke tepi atas/bawah layar untuk menggulir. Lepas di kotak "Belum dapat kamar" untuk mengeluarkan dari kamar.
 - Ketuk nama untuk pindah lewat pilihan kamar, atau tukar kamar dengan peserta lain.
 - "Tambah penghuni" di tiap kamar memilih dari daftar Peserta, tidak perlu mengetik nama.
+- "Tambah kamar" (kanan atas menu Kamar) membuat kamar baru dengan nomor berikutnya. Kamar kosong bisa dihapus.
 - Semua pindahan tercatat di Riwayat update.
