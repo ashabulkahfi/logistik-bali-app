@@ -1566,9 +1566,10 @@ function saveForm() {
   if (acc && acc.req) setTimeout(() => saveAccess(acc.req), 0);
   const orig = JSON.parse(f.dataset.orig || "{}");
   const vals = {};
-  d.cols.forEach(c => { const el = f.elements[c.k]; if (el) vals[c.k] = el.value.trim(); });
+  // Ambil isian lewat atribut name. Jangan pakai f.elements[nama]: nama seperti "item" bentrok dengan fungsi bawaan browser.
+  d.cols.forEach(c => { const x = el(f, c.k); if (x) vals[c.k] = String(x.value ?? "").trim(); });
   const miss = d.cols.find(c => c.req && el(f, c.k) && !vals[c.k]);
-  if (miss) { toast(`${miss.l} wajib diisi`); f.elements[miss.k].focus(); return; }
+  if (miss) { toast(`${miss.l} wajib diisi`); el(f, miss.k).focus(); return; }
   if (!id) {
     const row = { ...orig, ...vals, id: orig.id || uid(d.prefix) };
     push({ op:"add", table:key, row, label: rowLabel(key, row), tableLabel: tblLabel(key) });
@@ -1584,7 +1585,7 @@ function saveForm() {
   }
   closeLayer();
 }
-const el = (f, k) => f.elements[k];
+const el = (f, k) => f.querySelector(`[name="${k}"]`);
 
 /* ============ Toast ============ */
 let toastT;
