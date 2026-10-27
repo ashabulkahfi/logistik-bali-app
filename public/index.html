@@ -1050,8 +1050,51 @@ function vGala() {
 }
 function vBelanja() {
   const R = T("belanja"); const tot = R.reduce((s,r)=>s+num(r.qty)*num(r.harga),0);
-  return vSimple("belanja", `<div class="chips"><span class="chip"><b>${R.filter(r=>r.sudah).length}/${R.length}</b> dibeli</span><span class="chip">Total <b>${rp(tot)}</b></span><span class="chip warn">Ajukan reimburse ke Ameilia / Hanna</span></div>`);
+  return vSimple("belanja", `<div class="chips"><span class="chip"><b>${R.filter(r=>r.sudah).length}/${R.length}</b> dibeli</span><span class="chip">Total <b>${rp(tot)}</b></span><span class="chip warn">Ajukan reimburse ke Ameilia / Hanna</span><button class="btn sm" data-act="toProp">${icon("box")} Pindahkan ke Properti</button></div>`);
 }
+
+/* ---- Belanja -> Properti ---- */
+const sameName = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+function toPropSheet() {
+  const R = T("belanja"), P = T("properti");
+  sheet("Pindahkan ke Properti", `
+    <p class="muted" style="margin:0 0 10px;font-size:14px">Pilih barang yang perlu dilacak di Properti (dibawa, dipasang, dikembalikan). Qty, satuan, harga, dan catatan ikut terbawa.</p>
+    <div class="row" style="margin-bottom:6px"><button type="button" class="btn sm" data-act="tpAll">Pilih semua</button><button type="button" class="btn sm" data-act="tpBought">Yang sudah dibeli saja</button><button type="button" class="btn sm" data-act="tpNone">Kosongkan</button></div>
+    <div class="pool" style="columns:1">${R.map(r => { const dup = P.some(x => sameName(x.item, r.item));
+      return `<label style="padding:7px 0;border-bottom:1px solid var(--line)"><input type="checkbox" class="tpChk" value="${esc(r.id)}" data-bought="${r.sudah ? 1 : ""}">
+        <span style="flex:1">${esc(r.item)} <small class="muted">${esc([r.qty, r.satuan].filter(Boolean).join(" "))}${r.sudah ? ", sudah dibeli" : ""}</small></span>
+        ${dup ? `<span class="pill fr" style="font-size:11px">Sudah ada di Properti</span>` : ""}</label>`; }).join("")}</div>
+    <label style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:14px"><input type="checkbox" id="tpKeep" checked style="width:18px;height:18px;margin-top:2px;accent-color:var(--lagoon)">
+      <span><b>Tetap simpan di Belanja</b><br><span class="muted">Disarankan, supaya total reimburse ke Bendahara tidak berubah. Hapus centang kalau mau benar-benar dipindah.</span></span></label>`,
+    `<button class="btn" data-act="close">Batal</button><button class="btn pri" data-act="tpGo">Pindahkan</button>`);
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const a = b.dataset.act, boxes = () => [...document.querySelectorAll(".tpChk")];
+  if (a === "toProp") toPropSheet();
+  if (a === "tpAll") boxes().forEach(x => x.checked = true);
+  if (a === "tpNone") boxes().forEach(x => x.checked = false);
+  if (a === "tpBought") boxes().forEach(x => x.checked = !!x.dataset.bought);
+  if (a === "tpGo") {
+    const ids = boxes().filter(x => x.checked).map(x => x.value);
+    if (!ids.length) return toast("Pilih minimal satu barang");
+    const keep = $("#tpKeep").checked, P = T("properti"), ops = []; let skip = 0;
+    ids.forEach(id => {
+      const r = byId("belanja", id); if (!r) return;
+      if (P.some(x => sameName(x.item, r.item))) { skip++; }
+      else {
+        const row = { id: uid("pr"), item: r.item, kegunaan: r.kategori || "", qty: r.qty || "", satuan: r.satuan || "", sumber: "Beli dari JKT",
+          pic: "", harga: r.harga || "", berat: "", status: r.sudah ? "Siap" : "Belum", catatan: [r.catatan, "Dari daftar Belanja"].filter(Boolean).join(". ") };
+        ops.push({ op:"add", table:"properti", row, label: r.item, tableLabel: "Properti" });
+      }
+      if (!keep) ops.push({ op:"delete", table:"belanja", id, label: r.item, tableLabel: "Belanja" });
+    });
+    if (!ops.length) { closeLayer(); return toast("Semua barang yang dipilih sudah ada di Properti"); }
+    push(...ops); closeLayer();
+    const n = ids.length - skip;
+    toast(`${n} barang masuk Properti${skip ? `, ${skip} dilewati karena sudah ada` : ""}${keep ? "" : ", dihapus dari Belanja"}`);
+  }
+});
 function vHadiah() {
   const H = T("hadiah"), Sv = T("souvenir");
   const blm = [...H, ...Sv].filter(r => r.serah !== "Sudah").length;
