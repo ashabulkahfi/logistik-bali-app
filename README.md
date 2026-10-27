@@ -85,3 +85,11 @@ curl -X POST https://NAMA-SITE.netlify.app/api/reset \
 - "Tambah penghuni" di tiap kamar memilih dari daftar Peserta, tidak perlu mengetik nama.
 - "Tambah kamar" (kanan atas menu Kamar) membuat kamar baru dengan nomor berikutnya. Kamar kosong bisa dihapus.
 - Semua pindahan tercatat di Riwayat update.
+
+## Rundown
+- Menu **Rundown**: jadwal 3 hari (waktu Bali / WITA) dari rundown final panitia.
+  Admin & Anggota bisa ubah jam/isi (ketuk kegiatan), geser urutan (↑ ↓), tambah/hapus, atau "Urutkan sesuai jam".
+- Baris INTIMATE GALA DINNER punya tombol **Susunan acara** (16 segmen dari sheet Gala Dinner-Acara). Tombol yang sama ada di menu Gala dinner.
+- Peserta membuka **https://NAMA-SITE.netlify.app/rundown** tanpa login: hanya jadwal (tanpa susunan acara gala dinner),
+  tombol Salin untuk WA, dan penanda "Sedang berlangsung" saat hari H. Perubahan dari tim langsung terlihat.
+- Saat update ke versi ini, tabel rundown ditambahkan otomatis ke data yang sudah ada. Data lama tidak diubah.

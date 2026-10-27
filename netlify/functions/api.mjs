@@ -27,7 +27,22 @@ async function read(st, key, fallback) {
 
 // Kalau data tersimpan masih versi Excel lama, ganti dengan data Excel terbaru.
 // Data lama disalin dulu ke "db-backup-v<versi>" supaya bisa dipulihkan.
+// Tabel baru (misalnya rundown) ditambahkan ke data yang sudah berjalan tanpa mengubah tabel lama.
+async function addMissingTables(st) {
+  const cur = await st.getWithMetadata("db", { type: "json" });
+  if (!cur || !cur.data || !cur.data.tables) return;
+  const missing = Object.keys(SEED.tables).filter((k) => !cur.data.tables[k]);
+  if (!missing.length) return;
+  await mutate(st, "db", SEED, (d) => {
+    const m = Object.keys(SEED.tables).filter((k) => !d.tables[k]);
+    if (!m.length) return false;
+    for (const k of m) d.tables[k] = structuredClone(SEED.tables[k]);
+    d.rev = (d.rev || 0) + 1;
+  });
+}
+
 async function upgradeIfNeeded(st, user) {
+  await addMissingTables(st);
   const cur = await st.getWithMetadata("db", { type: "json" });
   if (!cur || !cur.data) return;
   const oldV = cur.data.seedVersion || 1;
@@ -333,6 +348,17 @@ export default async (req) => {
     if (!res || !res.data) return new Response("Not found", { status: 404 });
     return new Response(res.data, { headers: { "content-type": res.metadata?.type || "image/jpeg",
       "cache-control": "public, max-age=31536000, immutable" } });
+  }
+
+  // Rundown untuk peserta: boleh dibuka tanpa login, hanya berisi jadwal kegiatan.
+  if (route === "rundown" && req.method === "GET") {
+    try {
+      await addMissingTables(st);
+      const db = (await read(st, "db", SEED)).data;
+      const rows = (db.tables.rundown || SEED.tables.rundown).map(({ id, day, urut, mulai, selesai, ikon, kegiatan, catatan, sub }) =>
+        ({ id, day, urut, mulai, selesai, ikon, kegiatan, catatan, sub }));
+      return json({ rows, rev: db.rev });
+    } catch (e) { return json({ error: e.message }, 500); }
   }
 
   // Layar penonton spinwheel boleh dibuka tanpa login

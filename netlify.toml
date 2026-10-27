@@ -10,3 +10,9 @@
   from = "/spin"
   to = "/index.html"
   status = 200
+
+# Rundown untuk peserta (tanpa login)
+[[redirects]]
+  from = "/rundown"
+  to = "/index.html"
+  status = 200

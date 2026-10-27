@@ -310,10 +310,10 @@ details.box[open] summary::after{content:"－"}
 #guest .g-head b{font:800 19px var(--display)}
 #guest .g-head small{display:block;color:#A9C7D6;font-size:12px}
 #guest .g-head a{margin-left:auto;color:#F6C453;font-weight:700;font-size:13px}
-#guest .box{background:#16293B;border-color:#24405A;color:#E6EEF0}
-#guest .box .li{border-color:#24405A}
-#guest .box .t span,#guest .muted{color:#A9C7D6}
-#guest h3.sec{color:#fff;margin:6px 0 0}
+#guest:not(.rg) .box{background:#16293B;border-color:#24405A;color:#E6EEF0}
+#guest:not(.rg) .box .li{border-color:#24405A}
+#guest:not(.rg) .box .t span,#guest:not(.rg) .muted{color:#A9C7D6}
+#guest:not(.rg) h3.sec{color:#fff;margin:6px 0 0}
 @media (prefers-reduced-motion:reduce){.stage-status.win .big{animation:none}}
 
 .thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--soft);display:block}
@@ -340,8 +340,8 @@ select.qs.s-tidak{background-color:var(--soft);color:var(--muted)}
 .main-credit{padding-top:10px}
 @media (min-width:960px){.main-credit{display:none}}
 .side .credit{text-align:left;padding:16px 12px 0}
-#guest .credit,#guest .credit b{color:#A9C7D6}
-#guest .credit b{color:#F6C453}
+#guest:not(.rg) .credit,#guest:not(.rg) .credit b{color:#A9C7D6}
+#guest:not(.rg) .credit b{color:#F6C453}
 
 .room li.mem{border-radius:8px;margin:0 -6px;padding:5px 6px;touch-action:auto;user-select:none;-webkit-user-select:none}
 .room li.mem:hover,.noroom li.mem:hover{background:var(--soft)}
@@ -356,6 +356,47 @@ body.dragging{cursor:grabbing;user-select:none;-webkit-user-select:none}
 body.dragging [data-drop]{transition:box-shadow .12s,border-color .12s}
 .drop-hover{border-color:var(--lagoon)!important;box-shadow:0 0 0 3px var(--lagoon-bg)}
 .drag-ghost{position:fixed;left:0;top:0;z-index:80;pointer-events:none;display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:999px;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+
+/* ---------- Rundown ---------- */
+.rd-days{flex-wrap:wrap}
+.rd-days button{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;border-radius:14px;padding:7px 14px}
+.rd-days button small{font-size:11px;font-weight:600;opacity:.75}
+ol.rd{list-style:none;margin:0;padding:0}
+.rd-box{padding:4px 12px}
+.rd-row{display:grid;grid-template-columns:58px 30px 1fr auto;gap:4px 10px;align-items:start;padding:11px 4px;border-bottom:1px solid var(--line)}
+.rd-row:last-child{border-bottom:0}
+.rd-row[data-act]{cursor:pointer}
+.rd-row[data-act]:hover{background:var(--soft)}
+.rd-time{font:800 15px/1.15 var(--display);font-variant-numeric:tabular-nums}
+.rd-time span{display:block;font:600 12px var(--body);color:var(--muted)}
+.rd-ico{font-size:20px;line-height:1.1;text-align:center}
+.rd-body b{display:block;font-weight:700;line-height:1.3}
+.rd-body small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.rd-body .ga-need{font-size:12px}
+.rd-row.sub{padding:3px 4px 7px;border-bottom:0}
+.rd-row.sub .rd-ico{font-size:16px}
+.rd-row.sub .rd-body b{font-weight:600;font-size:14px}
+.rd-row.sub + .rd-row:not(.sub){border-top:1px solid var(--line)}
+.rd-row.now{background:var(--ok-bg);border-radius:12px}
+.rd-row.now.sub{border-radius:0}
+.rd-row.now:has(+ .rd-row.now.sub){border-radius:12px 12px 0 0}
+.rd-row.now .rd-time{color:var(--ok)}
+.rd-row.past{opacity:.5}
+.rd-now{margin-top:4px}
+.rd-gala{margin-top:8px}
+.rd-move{display:flex;gap:4px}
+.rd-move .btn{min-height:32px;width:34px;padding:0}
+ol.ga .rd-row{grid-template-columns:58px 1fr}
+#guest.rg{background:var(--paper)}
+#guest.rg .g-in{max-width:640px}
+.rg-head{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.rg-head b{font:800 22px var(--display)}
+.rg-head small{display:block;color:var(--muted);font-size:12px}
+.rg-head a{margin-left:auto;font-weight:700;font-size:13px;white-space:nowrap}
+.rg-ban{background:var(--lagoon);color:#fff;border-radius:var(--r-lg);padding:16px 18px;display:grid;gap:2px}
+.rg-ban b{font:800 22px/1.2 var(--display)}
+.rg-ban span{opacity:.92;font-size:14px}
+@media (max-width:420px){.rd-row{grid-template-columns:50px 26px 1fr auto;gap:2px 8px}}
 </style>
 </head>
 <body>
@@ -430,6 +471,7 @@ const IC = {
   mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
   wheel:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>',
   key:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/>',
+  route:'<circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H16a3.5 3.5 0 0 0 0-7H8a3.5 3.5 0 0 1 0-7h7.5"/>',
   plus:'<path d="M12 5v14M5 12h14"/>', search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>', down:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', out:'<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
   copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'
@@ -441,6 +483,7 @@ const VIEWS = [
   {k:"peserta",l:"Peserta",i:"users",nav:1},
   {k:"kamar",l:"Kamar",i:"bed",nav:1},
   {k:"headcount",l:"Head count",i:"count",nav:1},
+  {k:"rundown",l:"Rundown",i:"route"},
   {k:"bagasi",l:"Bagasi",i:"bag"},
   {k:"properti",l:"Properti",i:"box"},
   {k:"gala",l:"Gala dinner",i:"mic"},
@@ -661,6 +704,24 @@ const DEF = {
       {k:"pic",l:"PIC",t:"select",o:["",...PIC]},
       {k:"siap",l:"Siap",t:"check",on:"✓"},
       {k:"catatan",l:"Catatan",t:"area",hm:1},
+    ]},
+  rundown: { label:"Kegiatan rundown", prefix:"r", title:"kegiatan", cols:[
+      {k:"day",l:"Hari",t:"select",o:["1","2","3"]},
+      {k:"mulai",l:"Jam mulai (contoh 10.00)"},
+      {k:"selesai",l:"Jam selesai (boleh kosong)"},
+      {k:"ikon",l:"Ikon (emoji)"},
+      {k:"kegiatan",l:"Kegiatan",main:1,req:1},
+      {k:"catatan",l:"Catatan untuk peserta",t:"area"},
+      {k:"sub",l:"Sub-kegiatan (tanpa jam, menjorok di bawah kegiatan sebelumnya)",t:"select",o:["","Ya"]},
+      {k:"gala",l:"Tampilkan tombol susunan acara gala dinner (khusus tim)",t:"select",o:["","Ya"]},
+    ]},
+  galaacara: { label:"Segmen gala dinner", prefix:"ga", title:"kegiatan", cols:[
+      {k:"no",l:"No"},
+      {k:"waktu",l:"Waktu (contoh 19.15-19.20)"},
+      {k:"durasi",l:"Durasi"},
+      {k:"kegiatan",l:"Kegiatan",main:1,req:1},
+      {k:"pic",l:"PIC"},
+      {k:"kebutuhan",l:"Kebutuhan / peralatan",t:"area"},
     ]},
   kontak: { label:"Kontak", prefix:"c", title:"pihak",
     desc:"Lengkapi nomor HP. Tekan WA untuk langsung chat.",
@@ -1046,7 +1107,7 @@ function galaOrder(r) {
 }
 function vGala() {
   const R = T("gala"); const ok = R.filter(r => r.siap).length;
-  return vSimple("gala", `<div class="chips"><span class="chip ${ok===R.length&&R.length?"good":""}">Siap <b>${ok}/${R.length}</b></span>${PIC.map(p=>`<span class="chip">${p} <b>${R.filter(r=>r.pic===p&&!r.siap).length}</b> belum siap</span>`).join("")}<span class="chip warn">Mekanisme tukar kado: tanya Sie Acara</span></div>`);
+  return vSimple("gala", `<div class="chips"><span class="chip ${ok===R.length&&R.length?"good":""}">Siap <b>${ok}/${R.length}</b></span>${PIC.map(p=>`<span class="chip">${p} <b>${R.filter(r=>r.pic===p&&!r.siap).length}</b> belum siap</span>`).join("")}<span class="chip warn">Mekanisme tukar kado: tanya Sie Acara</span><button class="btn sm" data-act="galaAcara">${icon("mic")} Susunan acara</button></div>`);
 }
 function vBelanja() {
   const R = T("belanja"); const tot = R.reduce((s,r)=>s+num(r.qty)*num(r.harga),0);
@@ -1147,7 +1208,7 @@ function vLog() {
 const RENDER = {
   ringkasan: vRingkasan, peserta: () => { const P = T("peserta"), n = P.filter(ikutDP).length;
     return vSimple("peserta", `<div class="chips"><span class="chip"><b>${P.length}</b> peserta</span><span class="chip good"><b>${n}</b> ikut doorprize</span><span class="chip"><b>${P.length-n}</b> tidak ikut doorprize</span><span class="chip"><b>${Object.keys(S.accounts).length}</b> punya akses aplikasi</span></div>`); }, kamar: vKamar, headcount: vHeadcount, bagasi: vBagasi,
-  properti: vProperti, gala: vGala, spin: vSpin, hadiah: vHadiah, belanja: vBelanja, bawaan: vBawaan, timeline: vTimeline,
+  rundown: vRundown, properti: vProperti, gala: vGala, spin: vSpin, hadiah: vHadiah, belanja: vBelanja, bawaan: vBawaan, timeline: vTimeline,
   kontak: () => vSimple("kontak"), log: vLog,
 };
 
@@ -1190,6 +1251,175 @@ document.addEventListener("click", e => {
   const hidden = $('#frm input[name="gambar"]'); hidden.value = "";
   $("#imgField").innerHTML = imgFieldInner($("#frm").dataset.id || JSON.parse($("#frm").dataset.orig).id, "");
 });
+
+
+/* ============ Rundown (jadwal 3 hari) ============ */
+const RD_DAYS = { "1": "Jumat, 13 November 2026", "2": "Sabtu, 14 November 2026", "3": "Minggu, 15 November 2026" };
+const RD_START = "2026-11-13";
+const isRundownPath = () => /^\/rundown\/?$/.test(location.pathname);
+const rdMin = t => { const m = String(t || "").match(/(\d{1,2})[.:](\d{2})/); return m ? +m[1] * 60 + +m[2] : null; };
+const rdSort = rows => rows.slice().sort((a, b) => (+a.day - +b.day) || (num(a.urut) - num(b.urut)));
+// Waktu Bali (WITA) supaya penanda "sedang berlangsung" benar di HP mana pun
+function witaNow() {
+  const f = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Makassar", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const p = Object.fromEntries(f.formatToParts(new Date()).map(x => [x.type, x.value]));
+  const day = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day) - Date.UTC(2026, 10, 13)) / 864e5) + 1;
+  return { day: String(day), min: +p.hour * 60 + +p.minute, before: day < 1, after: day > 3 };
+}
+// Tandai kegiatan yang sedang berlangsung / sudah lewat (hanya di hari H)
+function rdStatus(dayRows) {
+  const now = witaNow(); const st = {};
+  if (now.before || now.after) return st;
+  const main = dayRows.filter(r => !r.sub && rdMin(r.mulai) !== null);
+  main.forEach((r, i) => {
+    if (r.day !== now.day) return;
+    const a = rdMin(r.mulai), nxt = main[i + 1];
+    const b = rdMin(r.selesai) ?? (nxt ? rdMin(nxt.mulai) : 24 * 60);
+    st[r.id] = now.min >= b ? "past" : now.min >= a ? "now" : "";
+  });
+  // sub-kegiatan ikut status induknya
+  let parent = "";
+  dayRows.forEach(r => { if (r.sub) st[r.id] = parent; else parent = st[r.id] || ""; });
+  return st;
+}
+function rdTime(r) { return r.sub ? "" : r.selesai ? `${esc(r.mulai)}<span>${esc(r.selesai)}</span>` : esc(r.mulai); }
+function rdListHTML(rows, day, opt = {}) {
+  const R = rdSort(rows).filter(r => r.day === day);
+  const st = rdStatus(R);
+  if (!R.length) return `<div class="empty">Belum ada kegiatan di hari ini.</div>`;
+  return `<ol class="rd">${R.map((r, i) => `
+    <li class="rd-row ${r.sub ? "sub" : ""} ${st[r.id] || ""}" ${opt.edit ? `data-act="open" data-t="rundown" data-id="${esc(r.id)}"` : ""}>
+      <div class="rd-time">${rdTime(r)}</div>
+      <div class="rd-ico" aria-hidden="true">${esc(r.ikon || "•")}</div>
+      <div class="rd-body"><b>${esc(r.kegiatan)}</b>${st[r.id] === "now" && !r.sub ? `<span class="pill ok rd-now">Sedang berlangsung</span>` : ""}
+        ${r.catatan ? `<small>${esc(r.catatan)}</small>` : ""}
+        ${opt.gala && r.gala ? `<button class="btn sm rd-gala" data-act="galaAcara">${icon("mic")} Susunan acara</button>` : ""}</div>
+      ${opt.edit ? `<div class="rd-move"><button class="btn sm" data-act="rdUp" data-id="${esc(r.id)}" aria-label="Naikkan" ${i === 0 ? "disabled" : ""}>↑</button><button class="btn sm" data-act="rdDown" data-id="${esc(r.id)}" aria-label="Turunkan" ${i === R.length - 1 ? "disabled" : ""}>↓</button></div>` : ""}
+    </li>`).join("")}</ol>`;
+}
+function rdText(rows, days) {
+  const R = rdSort(rows);
+  return `*Rundown Gathering DTK x PERKOP 2026*\n(waktu Bali / WITA)\n` + days.map(d =>
+    `\n*Day ${d} - ${RD_DAYS[d]}*\n` + R.filter(r => r.day === d).map(r =>
+      r.sub ? `      ${r.ikon || "•"} ${r.kegiatan}` : `${r.ikon || "•"} ${[r.mulai, r.selesai].filter(Boolean).join("-")} | ${r.kegiatan}${r.catatan ? ` (${r.catatan})` : ""}`).join("\n")).join("\n");
+}
+function copyText(txt, okMsg) {
+  (navigator.clipboard?.writeText(txt) || Promise.reject()).then(() => toast(okMsg))
+    .catch(() => sheet("Salin teks", `<textarea class="inp" rows="16" readonly onclick="this.select()">${esc(txt)}</textarea>`));
+}
+function rdDefaultDay() { const n = witaNow(); return !n.before && !n.after ? n.day : "1"; }
+function rdTabs(cur, act) {
+  return `<div class="days rd-days">${Object.entries(RD_DAYS).map(([d, l]) => `<button class="${d === cur ? "on" : ""}" data-act="${act}" data-d="${d}"><b>Day ${d}</b><small>${l.split(",")[0]}, ${l.split(" ")[1]} Nov</small></button>`).join("")}</div>`;
+}
+
+/* ---- menu Rundown (tim) ---- */
+function vRundown() {
+  if (!S.rdDay) S.rdDay = rdDefaultDay();
+  const link = location.origin + "/rundown";
+  return header("Rundown", "Jadwal 3 hari (waktu Bali / WITA). Ketuk kegiatan untuk ubah jam atau isinya, pakai ↑ ↓ untuk menggeser urutan. Peserta melihatnya lewat link tanpa login.",
+    `<button class="btn pri sm" data-act="rdAdd">${icon("plus")} Tambah kegiatan</button>`) + `
+  ${rdTabs(S.rdDay, "rdDay")}
+  <div class="tools">
+    <button class="btn sm" data-act="rdCopy" data-d="${S.rdDay}">${icon("copy")} Salin Day ${S.rdDay}</button>
+    <button class="btn sm" data-act="rdCopy" data-d="all">${icon("copy")} Salin semua hari</button>
+    <button class="btn sm" data-act="rdSortTime">Urutkan sesuai jam</button>
+  </div>
+  <div class="box rd-box">${rdListHTML(T("rundown"), S.rdDay, { edit: true, gala: true })}</div>
+  <div class="panel" style="margin-top:14px"><h4>Link rundown untuk peserta</h4>
+    <p class="muted" style="font-size:14px;margin:0 0 8px">Tanpa login, hanya berisi jadwal (susunan acara gala dinner tidak ikut tampil). Perubahan di sini langsung terlihat di sana.</p>
+    <div class="row"><input class="inp" readonly value="${esc(link)}" onclick="this.select()"><button class="btn sm" data-act="rdLinkCopy">${icon("copy")} Salin</button><button class="btn sm" data-act="rdQR">QR</button></div><div id="rdQRBox"></div></div>`;
+}
+function rdMove(id, dir) {
+  const r = byId("rundown", id); if (!r) return;
+  const R = rdSort(T("rundown")).filter(x => x.day === r.day);
+  const i = R.findIndex(x => x.id === id), j = i + dir; if (j < 0 || j >= R.length) return;
+  const o = R[j]; let a = r.urut, b = o.urut;
+  if (num(a) === num(b)) { a = String(num(a) + (dir > 0 ? 1 : -1)); }
+  push({ op:"update", table:"rundown", id:r.id, changes:{ urut: b }, label:r.kegiatan, tableLabel:"Rundown", fieldLabels:{ urut:"Urutan" } },
+       { op:"update", table:"rundown", id:o.id, changes:{ urut: a }, label:o.kegiatan, tableLabel:"Rundown", fieldLabels:{ urut:"Urutan" } });
+}
+function rdSortByTime(day) {
+  const R = rdSort(T("rundown")).filter(x => x.day === day);
+  const blocks = []; R.forEach(r => { if (r.sub && blocks.length) blocks[blocks.length - 1].push(r); else blocks.push([r]); });
+  blocks.sort((x, y) => (rdMin(x[0].mulai) ?? 9999) - (rdMin(y[0].mulai) ?? 9999));
+  const ops = []; let n = 0;
+  blocks.flat().forEach(r => { n += 10; if (num(r.urut) !== n) ops.push({ op:"update", table:"rundown", id:r.id, changes:{ urut: String(n) }, label:r.kegiatan, tableLabel:"Rundown", fieldLabels:{ urut:"Urutan" } }); });
+  if (ops.length) { push(...ops); toast(`Day ${day} diurutkan sesuai jam`); } else toast("Urutan sudah sesuai jam");
+}
+function galaAcaraSheet() {
+  const G = T("galaacara").slice().sort((a, b) => num(a.no) - num(b.no));
+  sheet("Susunan acara gala dinner", `
+    <p class="muted" style="margin:0 0 10px;font-size:14px">Jimbaran, Day 1, 19.15-22.00. Ketuk segmen untuk mengubah.</p>
+    <ol class="rd ga">${G.map(g => `<li class="rd-row" data-act="open" data-t="galaacara" data-id="${esc(g.id)}">
+      <div class="rd-time">${esc(g.waktu.split("-")[0] || "")}<span>${esc(g.waktu.split("-")[1] || "")}</span></div>
+      <div class="rd-body"><b>${esc(g.kegiatan)}</b><small>${esc([g.durasi, g.pic].filter(Boolean).join(", "))}</small>${g.kebutuhan ? `<small class="ga-need">${esc(g.kebutuhan)}</small>` : ""}</div></li>`).join("")}</ol>`,
+    `<button class="btn" data-act="gaAdd">${icon("plus")} Tambah segmen</button><button class="btn pri" data-act="close">Tutup</button>`);
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const a = b.dataset.act;
+  if (a === "rdDay") { S.rdDay = b.dataset.d; render(); }
+  if (a === "rdUp" || a === "rdDown") { e.stopPropagation(); rdMove(b.dataset.id, a === "rdUp" ? -1 : 1); }
+  if (a === "rdSortTime") rdSortByTime(S.rdDay);
+  if (a === "rdCopy") copyText(rdText(T("rundown"), b.dataset.d === "all" ? ["1","2","3"] : [b.dataset.d]), "Rundown disalin, tinggal tempel di grup");
+  if (a === "rdLinkCopy") copyText(location.origin + "/rundown", "Link disalin");
+  if (a === "rdQR") showQRIn("#rdQRBox", location.origin + "/rundown");
+  if (a === "rdAdd") {
+    const R = T("rundown").filter(r => r.day === S.rdDay);
+    openForm("rundown", null, { day: S.rdDay, urut: String(Math.max(0, ...R.map(r => num(r.urut))) + 10), ikon: "📍", sub: "", gala: "" });
+  }
+  if (a === "galaAcara") { e.stopPropagation(); galaAcaraSheet(); }
+  if (a === "gaAdd") openForm("galaacara", null, { no: String(Math.max(0, ...T("galaacara").map(g => num(g.no))) + 1) });
+});
+async function showQRIn(sel, text) {
+  const box = $(sel); if (!box) return;
+  if (box.innerHTML) { box.innerHTML = ""; return; }
+  try {
+    if (!window.QRCode) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js");
+    box.innerHTML = `<div class="qr"></div>`;
+    new QRCode(box.firstChild, { text, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+  } catch { toast("Gagal memuat QR. Cek koneksi."); }
+}
+
+/* ---- halaman rundown untuk peserta (tanpa login) ---- */
+const RG = { rows: [], day: null };
+async function rgLoad() {
+  try { const r = await fetch("/api/rundown", { cache: "no-store" }); const d = await r.json(); if (d.rows) { RG.rows = d.rows; rgRender(); } }
+  catch { const n = $("#rgNet"); if (n) n.textContent = "Tidak ada koneksi. Menampilkan data terakhir."; }
+}
+function rgRender() {
+  const now = witaNow(); if (!RG.day) RG.day = rdDefaultDay();
+  const R = rdSort(RG.rows).filter(r => r.day === RG.day), st = rdStatus(R);
+  const cur = R.find(r => st[r.id] === "now" && !r.sub);
+  const nxt = !now.before && !now.after ? rdSort(RG.rows).find(r => !r.sub && r.day === now.day && rdMin(r.mulai) > now.min) : null;
+  const left = Math.round((new Date(RD_START + "T00:00:00+08:00") - new Date()) / 864e5);
+  const banner = now.before ? `<div class="rg-ban"><b>${left > 0 ? left + " hari lagi" : "Besok berangkat"}</b><span>Kumpul di Bandara Soekarno-Hatta pukul 04.00 WIB, Jumat 13 November.</span></div>`
+    : now.after ? `<div class="rg-ban"><b>Terima kasih!</b><span>Sampai jumpa di gathering berikutnya.</span></div>`
+    : `<div class="rg-ban"><b>${cur ? esc(cur.ikon + " " + cur.kegiatan) : "Day " + now.day}</b><span>${cur ? "Sedang berlangsung" : "Belum ada kegiatan berjalan"}${nxt ? `. Berikutnya ${esc(nxt.mulai)}: ${esc(nxt.kegiatan)}` : ""}</span></div>`;
+  $("#guestIn").innerHTML = `
+    <div class="rg-head"><div><b>Rundown Gathering</b><small>DTK x PERKOP 2026, Bali. Waktu Bali (WITA)</small></div><a href="/spin">Doorprize live</a></div>
+    ${banner}
+    ${rdTabs(RG.day, "rgDay")}
+    <div class="tools"><button class="btn sm" data-act="rgCopy" data-d="${RG.day}">${icon("copy")} Salin Day ${RG.day}</button><button class="btn sm" data-act="rgCopy" data-d="all">${icon("copy")} Salin semua hari</button></div>
+    <div class="box rd-box">${rdListHTML(RG.rows, RG.day)}</div>
+    <p class="muted" id="rgNet" style="font-size:12px;text-align:center;margin:8px 0 0">Jadwal bisa berubah, halaman ini selalu menampilkan versi terbaru dari panitia.</p>
+    <span class="credit">by <b>AK-DEV</b></span>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  if (b.dataset.act === "rgDay") { RG.day = b.dataset.d; rgRender(); }
+  if (b.dataset.act === "rgCopy") copyText(rdText(RG.rows, b.dataset.d === "all" ? ["1","2","3"] : [b.dataset.d]), "Rundown disalin, tinggal tempel di WA");
+});
+function bootRundownGuest() {
+  $("#login").classList.add("hidden"); $("#shell").classList.add("hidden"); $("#guest").classList.remove("hidden");
+  $("#guest").classList.add("rg");
+  document.title = "Rundown Gathering DTK x PERKOP 2026";
+  $("#guestIn").innerHTML = `<div class="empty">Memuat rundown…</div>`;
+  rgLoad();
+  setInterval(() => { if (!document.hidden) rgLoad(); }, 60000);
+  setInterval(rgRender, 30000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) rgLoad(); });
+}
 
 /* ============ Spinwheel (live di semua HP) ============ */
 const SP = { st:null, v:-1, off:0, rtt:1e9, timer:null, raf:0, el:null, cv:null, size:0, sound:false, ac:null,
@@ -1742,7 +1972,7 @@ async function exportXlsx() {
     const wb = XLSX.utils.book_new();
     const add = (name, rows) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), name.slice(0,31));
     const strip = h => String(h).replace(/<[^>]+>/g, "");
-    ["peserta","bagasi","properti","gala","hadiah","souvenir","belanja","bawaan","timeline","kontak","konfirmasi"].forEach(k => {
+    ["rundown","galaacara","peserta","bagasi","properti","gala","hadiah","souvenir","belanja","bawaan","timeline","kontak","konfirmasi"].forEach(k => {
       const cols = DEF[k].cols;
       add(DEF[k].label, [cols.map(c => c.l), ...rowsOf(k).map(r => cols.map(c => c.t === "calc" ? strip(c.f(r)) : (r[c.k] ?? "")))]);
     });
@@ -1845,7 +2075,7 @@ async function start() {
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden && S.token) load(); });
 
-if (isGuestPath()) bootGuest(); else if (S.token) start(); else logout(localStorage.getItem("lg_pass") ? "Sekarang setiap orang punya akun sendiri. Minta nama pengguna & password ke admin Logistik." : "");
+if (isRundownPath()) bootRundownGuest(); else if (isGuestPath()) bootGuest(); else if (S.token) start(); else logout(localStorage.getItem("lg_pass") ? "Sekarang setiap orang punya akun sendiri. Minta nama pengguna & password ke admin Logistik." : "");
 </script>
 </body>
 </html>
