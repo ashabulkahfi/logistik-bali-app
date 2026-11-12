@@ -229,6 +229,8 @@ const SPIN_EMPTY = { v: 0, announce: null, current: null, history: [], exclude: 
 const SPIN_MAX_BATCH = 10;   // maksimal hadiah per satu putaran
 const STOP_LEAD = 900;       // jeda tombol STOP sampai roda mulai melambat (supaya semua HP sempat menerima)
 const STOP_MIN_LEFT = 2500;  // kalau sisa putaran kurang dari ini, STOP tidak perlu
+const BATCH_PAUSE = 2500;    // undi beberapa hadiah: jeda menampilkan kartu pemenang sebelum putaran berikutnya
+const BATCH_MINI = 5000;     // undi beberapa hadiah: lama putaran singkat untuk pemenang ke-2 dst
 
 function randInt(n) {
   const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n;
@@ -265,6 +267,18 @@ function planStop(c, stopAt) {
   return { stopAt, stopTheta: theta, stopDelta: delta, stopDur: Math.round(dur), endAt: stopAt + Math.round(dur) };
 }
 const endOf = (c) => c.endAt || c.startAt + c.dur;
+// Akhir putaran pertama (bisa maju kalau admin menekan STOP)
+const end0Of = (c) => c.stopAt ? c.stopAt + c.stopDur : c.startAt + c.dur;
+// Jadwal batch: pemenang ke-k terungkap di end0 + k*(jeda+putaran singkat)
+function scheduleBatch(c, history) {
+  const e0 = end0Of(c), K = (c.winners || []).length || 1, step = (c.pause || 0) + (c.mini || 0);
+  c.endAt = e0 + (K - 1) * step;
+  history.forEach((h) => {
+    if ((h.spin || h.id.split("-")[0]) !== c.id) return;
+    const k = h.id.includes("-") ? +h.id.split("-")[1] : 0;
+    h.revealAt = e0 + k * step;
+  });
+}
 // Daftar hadiah yang diumumkan (bisa lebih dari satu)
 const annItems = (a) => !a ? [] : a.items && a.items.length ? a.items : [{ prize: a.prize, hadiahId: a.hadiahId || "" }];
 const annLabel = (items) => items.length === 1 ? items[0].prize : `${items.length} hadiah sekaligus`;
@@ -284,7 +298,8 @@ const spinPublic = (s) => ({
   announce: s.announce && { prize: s.announce.prize, img: s.announce.img || "", items: annItems(s.announce).map((x) => ({ prize: x.prize, img: x.img || "" })) },
   current: s.current && { id: s.current.id, prize: s.current.prize, img: s.current.img || "", names: s.current.names, winnerIdx: s.current.winnerIdx,
     jitter: s.current.jitter, turns: s.current.turns, startAt: s.current.startAt, dur: s.current.dur, endAt: endOf(s.current),
-    winners: (s.current.winners || [{ idx: s.current.winnerIdx, prize: s.current.prize, img: s.current.img || "" }]).map((w) => ({ idx: w.idx, prize: w.prize, img: w.img || "" })),
+    pause: s.current.pause || 0, mini: s.current.mini || 0,
+    winners: (s.current.winners || [{ idx: s.current.winnerIdx, prize: s.current.prize, img: s.current.img || "" }]).map((w) => ({ idx: w.idx, prize: w.prize, img: w.img || "", jit: w.jit || 0 })),
     stopAt: s.current.stopAt || null, stopTheta: s.current.stopTheta, stopDelta: s.current.stopDelta, stopDur: s.current.stopDur },
   history: s.history.map((h) => ({ id: h.id, prize: h.prize, img: h.img || "", winner: h.winner, revealAt: h.revealAt, void: !!h.void })),
 });
@@ -345,27 +360,31 @@ async function spinRoute(st, route, req, user) {
       const picks = shuffle(pool.map((_, i) => i)).slice(0, items.length);
       const startAt = Date.now() + SPIN_LEAD;
       const id = Date.now().toString(36) + randInt(1e6).toString(36);
-      const winners = items.map((it, k) => ({ idx: picks[k], prize: it.prize, hadiahId: it.hadiahId, img: imgOf(db, it.hadiahId) }));
+      // jit: posisi berhenti di dalam segmen tiap pemenang (pemenang ke-1 memakai jitter utama)
+      const winners = items.map((it, k) => ({ idx: picks[k], prize: it.prize, hadiahId: it.hadiahId, img: imgOf(db, it.hadiahId),
+        jit: (randInt(2) ? 1 : -1) * (0.15 + randInt(1000) / 1000 * 0.2) }));
       s.current = { id, prize: annLabel(items), hadiahId: items[0].hadiahId, img: winners[0].img, names: pool.map((p) => p.nama),
         // jitter: posisi berhenti di dalam segmen pemenang pertama. Dibuat dekat batas antar nama supaya menegangkan.
         winnerIdx: picks[0], winners, jitter: (randInt(2) ? 1 : -1) * (0.22 + randInt(1000) / 1000 * 0.2), turns: 5 + randInt(2),
-        startAt, dur: SPIN_DUR, endAt: startAt + SPIN_DUR, by: user };
+        startAt, dur: SPIN_DUR, pause: BATCH_PAUSE, mini: BATCH_MINI, by: user };
       winners.forEach((w, k) => {
         s.history.push({ id: id + (k ? "-" + k : ""), spin: id, prize: w.prize, hadiahId: w.hadiahId, img: w.img, pid: pool[w.idx].id, winner: pool[w.idx].nama,
-          by: user, t: new Date().toISOString(), revealAt: startAt + SPIN_DUR });
+          by: user, t: new Date().toISOString(), revealAt: 0 });
       });
+      scheduleBatch(s.current, s.history);
       logs = winners.map((w) => ({ user, table: "hadiah", tableLabel: "Spinwheel", action: "spin", label: `${w.prize}: ${pool[w.idx].nama}` }));
       hadiahOps = winners.map((w) => [w.hadiahId, pool[w.idx].nama, "✓"]);
       s.announce = null;
     }
     else if (route === "spin/stop") {
       const c = s.current, now = Date.now();
-      if (!c || now >= endOf(c)) { err = "Roda tidak sedang berputar"; return false; }
+      if (!c || now >= end0Of(c)) { err = "Roda tidak sedang berputar panjang"; return false; }
       if (c.stopAt) { err = "Roda sudah dihentikan"; return false; }
       const stopAt = Math.max(now, c.startAt) + STOP_LEAD;
-      if (endOf(c) - stopAt < STOP_MIN_LEFT) { err = "Roda sudah hampir berhenti"; return false; }
-      Object.assign(c, planStop(c, stopAt));
-      s.history.forEach((h) => { if ((h.spin || h.id) === c.id) h.revealAt = c.endAt; });
+      if (end0Of(c) - stopAt < STOP_MIN_LEFT) { err = "Roda sudah hampir berhenti"; return false; }
+      const plan = planStop(c, stopAt); delete plan.endAt;
+      Object.assign(c, plan);
+      scheduleBatch(c, s.history); // pemenang berikutnya ikut maju jadwalnya
       logs = [{ user, table: "hadiah", tableLabel: "Spinwheel", action: "stop", label: "Roda dihentikan lebih cepat (pemenang tetap)" }];
     }
     else if (route === "spin/void") {
