@@ -419,8 +419,7 @@ ol.ga .rd-row{grid-template-columns:58px 1fr}
 .stage-status.multi{min-height:0}
 .win-list{display:grid;gap:6px;width:min(100%,440px);margin-top:6px;text-align:left}
 .wl{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:7px 10px;animation:pop .45s cubic-bezier(.2,1.5,.4,1) both}
-.wl:nth-child(2){animation-delay:.12s}.wl:nth-child(3){animation-delay:.24s}.wl:nth-child(4){animation-delay:.36s}.wl:nth-child(5){animation-delay:.48s}
-.wl:nth-child(n+6){animation-delay:.6s}
+.wl:not(:last-child){animation:none}
 .wl .n{font:800 15px var(--display);color:#F6C453;min-width:18px}
 .wl img,.wl .gi{width:38px;height:38px;border-radius:9px;object-fit:cover;background:#fff;display:grid;place-items:center;font-size:20px;flex:none}
 .wl b{display:block;color:#F6C453;font:800 16px/1.15 var(--display)}
@@ -1517,20 +1516,38 @@ function wheelModel() {
   const st = SP.st; if (!st) return { names:[], rot:0, phase:"load" };
   const c = st.current;
   if (c && !st.announce) {
-    const n = c.names.length, seg = 2 * Math.PI / n;
+    const TAU = 2 * Math.PI, n = c.names.length, seg = TAU / n;
+    const mod = x => ((x % TAU) + TAU) % TAU;
     const thw = (c.winnerIdx + 0.5 + c.jitter) * seg;
-    const rf = c.turns * 2 * Math.PI + (((1.5 * Math.PI - thw) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const rf = c.turns * TAU + mod(1.5 * Math.PI - thw);
     const W = c.winners && c.winners.length ? c.winners : [{ idx: c.winnerIdx, prize: c.prize, img: c.img }];
-    const wins = new Set(W.map(w => w.idx));
+    const K = W.length, wins = new Set(W.map(w => w.idx));
     const now = sNow(), t = (now - c.startAt) / c.dur;
-    if (t < 0) return { names:c.names, rot:0, phase:"count", left: Math.ceil(-t * c.dur / 1000), c, W };
-    if (c.stopAt && now >= c.stopAt) { // admin menekan STOP: melambat ke posisi akhir yang sama
-      const u = (now - c.stopAt) / c.stopDur;
-      if (u < 1) return { names:c.names, rot: c.stopTheta + c.stopDelta * (1 - Math.pow(1 - u, 3)), phase:"spin", t: 0.8 + 0.2 * u, stopping:1, c, W };
-      return { names:c.names, rot: c.stopTheta + c.stopDelta, phase:"done", win:c.winnerIdx, wins, c, W };
+    const end0 = c.stopAt ? c.stopAt + c.stopDur : c.startAt + c.dur;
+    const R0 = c.stopAt ? c.stopTheta + c.stopDelta : rf;
+    const base = { names:c.names, c, W, K };
+    // 1) hitung mundur
+    if (t < 0) return { ...base, rot:0, phase:"count", left: Math.ceil(-t * c.dur / 1000), shown:0 };
+    // 2) putaran panjang menuju pemenang ke-1 (bisa dipercepat STOP)
+    if (now < end0) {
+      if (c.stopAt && now >= c.stopAt) {
+        const u = (now - c.stopAt) / c.stopDur;
+        return { ...base, rot: c.stopTheta + c.stopDelta * (1 - Math.pow(1 - u, 3)), phase:"spin", t: 0.8 + 0.2 * u, stopping:1, shown:0 };
+      }
+      return { ...base, rot: rf * spinEase(t), phase:"spin", t, shown:0 };
     }
-    if (t < 1) return { names:c.names, rot: rf * spinEase(t), phase:"spin", t, c, W };
-    return { names:c.names, rot:rf, phase:"done", win:c.winnerIdx, wins, c, W };
+    // 3) beberapa hadiah: jeda (kartu pemenang) lalu putaran singkat ke pemenang berikutnya
+    const R = [R0];
+    for (let k = 1; k < K; k++) R[k] = R[k - 1] + 2 * TAU + mod(1.5 * Math.PI - (W[k].idx + 0.5 + (W[k].jit || 0)) * seg - R[k - 1]);
+    const P = c.pause || 0, M = c.mini || 0, el = now - end0;
+    for (let k = 1; k < K; k++) {
+      const s0 = (k - 1) * (P + M) + P, e0 = s0 + M;
+      if (el < s0) return { ...base, rot: R[k - 1], phase:"reveal", shown:k, last:k - 1 };
+      if (el < e0) { const u = (el - s0) / M; return { ...base, rot: R[k - 1] + (R[k] - R[k - 1]) * (1 - Math.pow(1 - u, 3)), phase:"spin2", u, drawing:k, shown:k }; }
+    }
+    const endAll = end0 + (K - 1) * (P + M);
+    // 4) selesai. Untuk beberapa hadiah, kartu pemenang terakhir tampil dulu sebentar baru ringkasan.
+    return { ...base, rot: R[K - 1], phase:"done", win:W[K - 1].idx, wins, shown:K, last:K - 1, lastCard: K > 1 && now < endAll + P };
   }
   return { names: st.pool, rot:0, phase: st.announce ? "ready" : "idle" };
 }
@@ -1555,10 +1572,12 @@ function drawStage(force) {
       const ci = (n % WHEEL_COLORS.length === 1 && i === n - 1) ? 3 : i % WHEEL_COLORS.length;
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, i * seg, (i + 1) * seg); ctx.closePath();
       ctx.fillStyle = WHEEL_COLORS[ci];
-      const lose = m.phase === "done" && !m.wins.has(i);
+      const lose = m.phase === "done" && !m.lastCard && !m.wins.has(i);
+      const revealed = m.W && m.K > 1 && m.W.slice(0, m.shown).some(w => w.idx === i);
       ctx.globalAlpha = lose ? 0.28 : 1;
       ctx.fill();
       ctx.globalAlpha = 1; ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 1.2 * dpr; ctx.stroke();
+      if (revealed) { ctx.save(); ctx.strokeStyle = "#F6C453"; ctx.lineWidth = 4 * dpr; ctx.stroke(); ctx.restore(); }
       ctx.save(); ctx.rotate((i + 0.5) * seg);
       ctx.fillStyle = lose ? "rgba(255,255,255,.55)" : WHEEL_TEXT[ci];
       ctx.font = `700 ${fs}px "Plus Jakarta Sans", system-ui, sans-serif`;
@@ -1570,7 +1589,7 @@ function drawStage(force) {
       ctx.restore();
     }
     // tick saat batas segmen melewati jarum
-    if (m.phase === "spin") {
+    if (m.phase === "spin" || m.phase === "spin2") {
       const idx = Math.floor((((1.5 * Math.PI - m.rot) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / seg);
       if (idx !== SP.lastIdx) { SP.lastIdx = idx; tick(); }
     }
@@ -1595,17 +1614,23 @@ function drawStage(force) {
   else if (m.phase === "idle") html = `<span class="lbl">Panitia akan mengumumkan hadiah berikutnya</span>`;
   else if (m.phase === "ready") html = `<span class="big">Siap diputar</span><span class="lbl">${n} nama di roda</span>`;
   else if (m.phase === "count") html = `<span class="big">${m.left}</span><span class="lbl">Roda akan berputar</span>`;
-  else if (m.phase === "spin") html = m.t < 0.45 ? `<span class="big">Memutar…</span><span class="lbl">Siapa yang beruntung?</span>`
+  else if (m.phase === "spin") html = (m.K > 1 ? `<span class="lbl">Hadiah ke-1 dari ${m.K}: ${esc(m.W[0].prize)}</span>` : "") + (m.t < 0.45 ? `<span class="big">Memutar…</span><span class="lbl">Siapa yang beruntung?</span>`
     : m.t < 0.75 ? `<span class="big">Mulai pelan…</span><span class="lbl">Siapa yang beruntung?</span>`
-    : `<span class="big suspense">Hampir berhenti…</span><span class="lbl">Tahan napas</span>`;
-  else if (m.phase === "done" && m.W.length > 1) { cls += " win multi"; html = `<span class="lbl">Selamat untuk ${m.W.length} pemenang</span><div class="win-list">${m.W.map((w, k) => `<div class="wl"><span class="n">${k + 1}</span>${w.img ? `<img src="${esc(w.img)}" alt="">` : `<span class="gi">🎁</span>`}<div><b>${esc(m.names[w.idx])}</b><small>${esc(w.prize)}</small></div></div>`).join("")}</div>`; }
+    : `<span class="big suspense">Hampir berhenti…</span><span class="lbl">Tahan napas</span>`);
+  else if (m.phase === "spin2") html = `<span class="lbl">Hadiah ke-${m.drawing + 1} dari ${m.K}: ${esc(m.W[m.drawing].prize)}</span><span class="big ${m.u > 0.6 ? "suspense" : ""}">${m.u > 0.6 ? "Hampir berhenti…" : "Memutar lagi…"}</span>${winList(m, m.shown)}`;
+  else if (m.phase === "reveal") { cls += " win multi"; html = `<span class="lbl">Pemenang ke-${m.last + 1} dari ${m.K}</span>${winList(m, m.shown)}`; }
+  else if (m.phase === "done" && m.K > 1) { cls += " win multi"; html = `<span class="lbl">Selamat untuk ${m.K} pemenang</span>${winList(m, m.K)}`; }
   else if (m.phase === "done") { cls += " win"; html = `<span class="lbl">Selamat untuk</span><span class="big">${esc(m.names[m.win])}</span>`; }
   if (stEl.dataset.h !== html) { stEl.innerHTML = html; stEl.className = cls; stEl.dataset.h = html; }
   const wEl = SP.el.querySelector("#spWin");
-  const wHtml = m.phase === "done" && m.W.length > 1 ? `<div class="win-card noimg"><small>Selamat!</small><b>${m.W.length} pemenang</b><span>Lihat daftarnya di bawah roda</span></div>`
-    : m.phase === "done" ? `<div class="win-card ${m.c.img ? "" : "noimg"}">${m.c.img ? `<img src="${esc(m.c.img)}" alt="${esc(m.c.prize)}">` : ""}<small>Selamat untuk</small><b>${esc(m.names[m.win])}</b><span>${esc(m.c.prize)}</span></div>` : "";
+  const card = w => `<div class="win-card ${w.img ? "" : "noimg"}">${w.img ? `<img src="${esc(w.img)}" alt="${esc(w.prize)}">` : ""}<small>${m.K > 1 ? `Pemenang ke-${m.W.indexOf(w) + 1} dari ${m.K}` : "Selamat untuk"}</small><b>${esc(m.names[w.idx])}</b><span>${esc(w.prize)}</span></div>`;
+  const wHtml = (m.phase === "reveal" || (m.phase === "done" && m.lastCard)) ? card(m.W[m.last])
+    : m.phase === "done" && m.K > 1 ? `<div class="win-card noimg"><small>Selamat!</small><b>${m.K} pemenang</b><span>Lihat daftarnya di bawah roda</span></div>`
+    : m.phase === "done" ? card(m.W[0]) : "";
   if (wEl.dataset.h !== wHtml) { wEl.innerHTML = wHtml; wEl.dataset.h = wHtml; }
-  SP.el.querySelector("#spHub").textContent = m.phase === "count" ? m.left : m.phase === "done" ? "★" : "GO";
+  SP.el.querySelector("#spHub").textContent = m.phase === "count" ? m.left : (m.phase === "done" || m.phase === "reveal") ? "★" : m.phase === "spin2" ? (m.drawing + 1) : "GO";
+  // bunyi kecil tiap pemenang batch terungkap
+  if (m.phase === "reveal" && SP.sawSpin === m.c.id && SP.revealBeep !== m.c.id + ":" + m.last) { SP.revealBeep = m.c.id + ":" + m.last; [784, 1047].forEach((f, i) => beep(f, 0.18, 0.08, "triangle", i * 0.12)); renderWinners(); }
   SP.el.querySelector("#spPool").textContent = st ? `${st.pool.length} peserta di undian` : "";
 
   if (m.phase === "done" && SP.celebrated !== m.c.id) {
@@ -1614,12 +1639,15 @@ function drawStage(force) {
     SP.celebrated = m.c.id; renderWinners();
     if (S.view === "spin" && !isGuestPath()) renderSpinAdmin();
   }
-  if (m.phase === "spin") SP.sawSpin = m.c.id;
+  if (m.phase === "spin" || m.phase === "spin2") SP.sawSpin = m.c.id;
   if (S.view === "spin" && !isGuestPath() && (m.phase !== SP.lastPhase || Date.now() - (SP.lastAdm || 0) > 300)) { SP.lastPhase = m.phase; SP.lastAdm = Date.now(); renderSpinAdmin(); }
-  SP.el.classList.toggle("tense", m.phase === "spin" && m.t > 0.75);
-  if (m.phase === "count" || m.phase === "spin") { cancelAnimationFrame(SP.raf); SP.raf = requestAnimationFrame(() => drawStage()); }
+  SP.el.classList.toggle("tense", (m.phase === "spin" && m.t > 0.75) || (m.phase === "spin2" && m.u > 0.6));
+  if (["count", "spin", "spin2", "reveal"].includes(m.phase) || m.lastCard) { cancelAnimationFrame(SP.raf); SP.raf = requestAnimationFrame(() => drawStage()); }
 }
 
+function winList(m, upto) {
+  return `<div class="win-list">${m.W.slice(0, upto).map((w, k) => `<div class="wl"><span class="n">${k + 1}</span>${w.img ? `<img src="${esc(w.img)}" alt="">` : `<span class="gi">🎁</span>`}<div><b>${esc(m.names[w.idx])}</b><small>${esc(w.prize)}</small></div></div>`).join("")}</div>`;
+}
 /* ---- suara (opsional, harus diaktifkan per HP) ---- */
 function toggleSound() {
   SP.sound = !SP.sound;
@@ -1695,7 +1723,7 @@ function renderSpinAdmin(force) {
   }
   const st = SP.st;
   const m = wheelModel();
-  const spinningNow = m.phase === "count" || m.phase === "spin";
+  const spinningNow = ["count", "spin", "spin2", "reveal"].includes(m.phase);
   const now = sNow();
   const canStop = m.phase === "spin" && m.c && !m.c.stopAt && (m.c.endAt || m.c.startAt + m.c.dur) - now > 3500;
   const prizes = T("hadiah").filter(h => !h.penerima);
