@@ -397,6 +397,35 @@ ol.ga .rd-row{grid-template-columns:58px 1fr}
 .rg-ban b{font:800 22px/1.2 var(--display)}
 .rg-ban span{opacity:.92;font-size:14px}
 @media (max-width:420px){.rd-row{grid-template-columns:50px 26px 1fr auto;gap:2px 8px}}
+
+.prize-pick{display:grid;gap:6px;max-height:320px;overflow:auto;padding:2px}
+.prize-pick label{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;font-size:14px;background:var(--card)}
+.prize-pick label.on{border-color:var(--lagoon);background:var(--lagoon-bg)}
+.prize-pick input{width:18px;height:18px;accent-color:var(--lagoon);flex:none}
+.prize-pick img{width:34px;height:34px;border-radius:8px;object-fit:cover;flex:none;background:#fff}
+.prize-pick .gi{width:34px;text-align:center;font-size:20px;flex:none}
+.prize-pick .nm{flex:1;font-weight:600}
+.prize-pick small{color:var(--muted);font-size:12px}
+.prize-pick .ord{background:var(--lagoon);color:#fff;border-radius:999px;min-width:24px;height:24px;display:grid;place-items:center;font-weight:800;font-size:12px}
+.ann-box{background:var(--fr-bg);border-radius:12px;padding:8px 12px;margin-bottom:10px}
+.ann-box small{font-weight:700;font-size:12px}
+.ann-box ol{margin:4px 0 0;padding-left:20px;font-size:14px;font-weight:600}
+.btn.spin.stop{background:var(--ink);border-color:var(--ink);color:var(--paper);letter-spacing:4px}
+.last-batch{margin-top:12px;display:grid;gap:4px}
+.last-batch small{font-weight:700;color:var(--muted)}
+.pz-strip{display:flex;gap:6px;justify-content:center;margin-bottom:6px;flex-wrap:wrap}
+.pz-strip img,.pz-strip span{width:44px;height:44px;border-radius:10px;object-fit:cover;background:#fff;display:grid;place-items:center;font-size:22px;border:2px solid rgba(255,255,255,.8)}
+.pz-names{font-size:13px;color:#DCE8EE;margin-top:4px;line-height:1.35}
+.stage-status.multi{min-height:0}
+.win-list{display:grid;gap:6px;width:min(100%,440px);margin-top:6px;text-align:left}
+.wl{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:7px 10px;animation:pop .45s cubic-bezier(.2,1.5,.4,1) both}
+.wl:nth-child(2){animation-delay:.12s}.wl:nth-child(3){animation-delay:.24s}.wl:nth-child(4){animation-delay:.36s}.wl:nth-child(5){animation-delay:.48s}
+.wl:nth-child(n+6){animation-delay:.6s}
+.wl .n{font:800 15px var(--display);color:#F6C453;min-width:18px}
+.wl img,.wl .gi{width:38px;height:38px;border-radius:9px;object-fit:cover;background:#fff;display:grid;place-items:center;font-size:20px;flex:none}
+.wl b{display:block;color:#F6C453;font:800 16px/1.15 var(--display)}
+.wl small{color:#DCE8EE;font-size:12px}
+@media (prefers-reduced-motion:reduce){.wl{animation:none}}
 </style>
 </head>
 <body>
@@ -1174,7 +1203,7 @@ function vTimeline() {
 }
 
 /* ---- Log ---- */
-const ACT = { ubah:"mengubah", tambah:"menambah", hapus:"menghapus", reset:"mereset" };
+const ACT = { ubah:"mengubah", tambah:"menambah", hapus:"menghapus", reset:"mereset", spin:"memutar", batal:"membatalkan", stop:"menghentikan" };
 function logItem(e) {
   const t = new Date(e.t);
   const time = t.toLocaleString("id-ID",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
@@ -1450,7 +1479,8 @@ async function spinPoll() {
     if (!d.same && d.v !== undefined) applySpin(d);
     setSpinNet(true);
   } catch { setSpinNet(false); }
-  SP.timer = setTimeout(spinPoll, document.hidden ? 4000 : 1000);
+  const ph = wheelModel().phase; // saat roda berputar cek lebih sering supaya tombol STOP admin cepat sampai
+  SP.timer = setTimeout(spinPoll, document.hidden ? 4000 : (ph === "count" || ph === "spin") ? 400 : 1000);
 }
 function setSpinNet(ok) { const e = document.getElementById("spNet"); if (e) e.textContent = ok ? "Live" : "Menyambung ulang…"; }
 function applySpin(d) {
@@ -1490,10 +1520,17 @@ function wheelModel() {
     const n = c.names.length, seg = 2 * Math.PI / n;
     const thw = (c.winnerIdx + 0.5 + c.jitter) * seg;
     const rf = c.turns * 2 * Math.PI + (((1.5 * Math.PI - thw) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-    const t = (sNow() - c.startAt) / c.dur;
-    if (t < 0) return { names:c.names, rot:0, phase:"count", left: Math.ceil(-t * c.dur / 1000), c };
-    if (t < 1) return { names:c.names, rot: rf * spinEase(t), phase:"spin", t, c };
-    return { names:c.names, rot:rf, phase:"done", win:c.winnerIdx, c };
+    const W = c.winners && c.winners.length ? c.winners : [{ idx: c.winnerIdx, prize: c.prize, img: c.img }];
+    const wins = new Set(W.map(w => w.idx));
+    const now = sNow(), t = (now - c.startAt) / c.dur;
+    if (t < 0) return { names:c.names, rot:0, phase:"count", left: Math.ceil(-t * c.dur / 1000), c, W };
+    if (c.stopAt && now >= c.stopAt) { // admin menekan STOP: melambat ke posisi akhir yang sama
+      const u = (now - c.stopAt) / c.stopDur;
+      if (u < 1) return { names:c.names, rot: c.stopTheta + c.stopDelta * (1 - Math.pow(1 - u, 3)), phase:"spin", t: 0.8 + 0.2 * u, stopping:1, c, W };
+      return { names:c.names, rot: c.stopTheta + c.stopDelta, phase:"done", win:c.winnerIdx, wins, c, W };
+    }
+    if (t < 1) return { names:c.names, rot: rf * spinEase(t), phase:"spin", t, c, W };
+    return { names:c.names, rot:rf, phase:"done", win:c.winnerIdx, wins, c, W };
   }
   return { names: st.pool, rot:0, phase: st.announce ? "ready" : "idle" };
 }
@@ -1518,11 +1555,12 @@ function drawStage(force) {
       const ci = (n % WHEEL_COLORS.length === 1 && i === n - 1) ? 3 : i % WHEEL_COLORS.length;
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, i * seg, (i + 1) * seg); ctx.closePath();
       ctx.fillStyle = WHEEL_COLORS[ci];
-      ctx.globalAlpha = (m.phase === "done" && i !== m.win) ? 0.28 : 1;
+      const lose = m.phase === "done" && !m.wins.has(i);
+      ctx.globalAlpha = lose ? 0.28 : 1;
       ctx.fill();
       ctx.globalAlpha = 1; ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 1.2 * dpr; ctx.stroke();
       ctx.save(); ctx.rotate((i + 0.5) * seg);
-      ctx.fillStyle = (m.phase === "done" && i !== m.win) ? "rgba(255,255,255,.55)" : WHEEL_TEXT[ci];
+      ctx.fillStyle = lose ? "rgba(255,255,255,.55)" : WHEEL_TEXT[ci];
       ctx.font = `700 ${fs}px "Plus Jakarta Sans", system-ui, sans-serif`;
       ctx.textAlign = "right"; ctx.textBaseline = "middle";
       let label = m.names[i]; const maxW = R * 0.66;
@@ -1542,11 +1580,14 @@ function drawStage(force) {
 
   // teks
   const st = SP.st;
+  const items = m.c ? m.W : (st?.announce?.items || (st?.announce ? [{ prize: st.announce.prize, img: st.announce.img }] : []));
   const prize = m.c ? m.c.prize : st?.announce?.prize;
-  const pimg = m.c ? m.c.img : st?.announce?.img;
-  if (pimg && SP.preload !== pimg) { SP.preload = pimg; new Image().src = pimg; }
+  items.forEach(x => { if (x.img && !SP.pre?.[x.img]) { (SP.pre ||= {})[x.img] = 1; new Image().src = x.img; } });
   const pz = SP.el.querySelector("#spPrize");
-  const pzHtml = prize ? `${pimg && m.phase !== "done" ? `<img class="pz-img" src="${esc(pimg)}" alt="">` : ""}<small>${m.c ? "Hadiah" : "Hadiah berikutnya"}</small><b>${esc(prize)}</b>` : `<small>Hadiah berikutnya</small><b style="color:#fff">Belum diumumkan</b>`;
+  const multi = items.length > 1;
+  const pzHtml = !prize ? `<small>Hadiah berikutnya</small><b style="color:#fff">Belum diumumkan</b>`
+    : multi ? `${m.phase !== "done" ? `<div class="pz-strip">${items.map(x => x.img ? `<img src="${esc(x.img)}" alt="">` : `<span>🎁</span>`).join("")}</div>` : ""}<small>${m.c ? "Diundi sekaligus" : "Diundi sekaligus berikutnya"}</small><b>${items.length} hadiah</b><div class="pz-names">${items.map(x => esc(x.prize)).join(" • ")}</div>`
+    : `${items[0]?.img && m.phase !== "done" ? `<img class="pz-img" src="${esc(items[0].img)}" alt="">` : ""}<small>${m.c ? "Hadiah" : "Hadiah berikutnya"}</small><b>${esc(prize)}</b>`;
   if (pz.dataset.h !== pzHtml) { pz.innerHTML = pzHtml; pz.dataset.h = pzHtml; }
   const stEl = SP.el.querySelector("#spStatus");
   let html = "", cls = "stage-status";
@@ -1557,10 +1598,12 @@ function drawStage(force) {
   else if (m.phase === "spin") html = m.t < 0.45 ? `<span class="big">Memutar…</span><span class="lbl">Siapa yang beruntung?</span>`
     : m.t < 0.75 ? `<span class="big">Mulai pelan…</span><span class="lbl">Siapa yang beruntung?</span>`
     : `<span class="big suspense">Hampir berhenti…</span><span class="lbl">Tahan napas</span>`;
+  else if (m.phase === "done" && m.W.length > 1) { cls += " win multi"; html = `<span class="lbl">Selamat untuk ${m.W.length} pemenang</span><div class="win-list">${m.W.map((w, k) => `<div class="wl"><span class="n">${k + 1}</span>${w.img ? `<img src="${esc(w.img)}" alt="">` : `<span class="gi">🎁</span>`}<div><b>${esc(m.names[w.idx])}</b><small>${esc(w.prize)}</small></div></div>`).join("")}</div>`; }
   else if (m.phase === "done") { cls += " win"; html = `<span class="lbl">Selamat untuk</span><span class="big">${esc(m.names[m.win])}</span>`; }
   if (stEl.dataset.h !== html) { stEl.innerHTML = html; stEl.className = cls; stEl.dataset.h = html; }
   const wEl = SP.el.querySelector("#spWin");
-  const wHtml = m.phase === "done" ? `<div class="win-card ${m.c.img ? "" : "noimg"}">${m.c.img ? `<img src="${esc(m.c.img)}" alt="${esc(m.c.prize)}">` : ""}<small>Selamat untuk</small><b>${esc(m.names[m.win])}</b><span>${esc(m.c.prize)}</span></div>` : "";
+  const wHtml = m.phase === "done" && m.W.length > 1 ? `<div class="win-card noimg"><small>Selamat!</small><b>${m.W.length} pemenang</b><span>Lihat daftarnya di bawah roda</span></div>`
+    : m.phase === "done" ? `<div class="win-card ${m.c.img ? "" : "noimg"}">${m.c.img ? `<img src="${esc(m.c.img)}" alt="${esc(m.c.prize)}">` : ""}<small>Selamat untuk</small><b>${esc(m.names[m.win])}</b><span>${esc(m.c.prize)}</span></div>` : "";
   if (wEl.dataset.h !== wHtml) { wEl.innerHTML = wHtml; wEl.dataset.h = wHtml; }
   SP.el.querySelector("#spHub").textContent = m.phase === "count" ? m.left : m.phase === "done" ? "★" : "GO";
   SP.el.querySelector("#spPool").textContent = st ? `${st.pool.length} peserta di undian` : "";
@@ -1572,6 +1615,7 @@ function drawStage(force) {
     if (S.view === "spin" && !isGuestPath()) renderSpinAdmin();
   }
   if (m.phase === "spin") SP.sawSpin = m.c.id;
+  if (S.view === "spin" && !isGuestPath() && (m.phase !== SP.lastPhase || Date.now() - (SP.lastAdm || 0) > 300)) { SP.lastPhase = m.phase; SP.lastAdm = Date.now(); renderSpinAdmin(); }
   SP.el.classList.toggle("tense", m.phase === "spin" && m.t > 0.75);
   if (m.phase === "count" || m.phase === "spin") { cancelAnimationFrame(SP.raf); SP.raf = requestAnimationFrame(() => drawStage()); }
 }
@@ -1652,38 +1696,53 @@ function renderSpinAdmin(force) {
   const st = SP.st;
   const m = wheelModel();
   const spinningNow = m.phase === "count" || m.phase === "spin";
+  const now = sNow();
+  const canStop = m.phase === "spin" && m.c && !m.c.stopAt && (m.c.endAt || m.c.startAt + m.c.dur) - now > 3500;
   const prizes = T("hadiah").filter(h => !h.penerima);
-  const last = st ? [...st.history].reverse().find(h => !h.void) : null;
-  const lastDone = last && last.revealAt <= sNow();
+  SP.sel = (SP.sel || []).filter(id => prizes.some(h => h.id === id));
+  SP.custom = SP.custom || [];
+  const nSel = SP.sel.length + SP.custom.length;
+  const ann = st?.announce ? (st.announce.items || [{ prize: st.announce.prize }]) : [];
+  // pemenang dari putaran terakhir (bisa lebih dari satu)
+  const lastSpin = st ? [...st.history].reverse().find(h => !h.void) : null;
+  const lastKey = lastSpin ? (lastSpin.id.split("-")[0]) : "";
+  const lastBatch = st && lastSpin ? st.history.filter(h => h.id.split("-")[0] === lastKey && !h.void && h.revealAt <= now) : [];
   const excl = new Set(st?.exclude || []);
   const P = T("peserta");
   const link = location.origin + "/spin";
   const ikut = P.filter(ikutDP);
-  const sig = JSON.stringify([st?.v, SP.busy, spinningNow, lastDone, prizes.length, P.map(p => p.nama + ikutDP(p)).join(), SP.draftHid]);
+  const pool = st?.pool.length || 0;
+  const sig = JSON.stringify([st?.v, SP.busy, spinningNow, canStop, lastBatch.length, prizes.length, P.map(p => p.nama + ikutDP(p)).join(), SP.sel, SP.custom, SP.nPick]);
   if (!force && sig === SP.adminSig) return; SP.adminSig = sig;
   const open = !!SP.poolOpen;
   box.innerHTML = `
     <div class="panel">
-      <h4>1. Umumkan hadiah</h4>
-      ${st?.announce ? `<p style="margin:0 0 10px">Tampil di semua HP: <b>${esc(st.announce.prize)}</b></p>` : `<p class="muted" style="margin:0 0 10px;font-size:14px">Pilih hadiah, lalu umumkan supaya semua orang tahu apa yang diundi.</p>`}
-      <div class="row">
-        <select class="inp" id="spPick">
-          <option value="">Pilih hadiah (${prizes.length} belum ada pemenang)</option>
-          ${prizes.map(h => `<option value="${esc(h.id)}" ${SP.draftHid===h.id?"selected":""}>${esc(h.hadiah)} (${esc(h.asal)})</option>`).join("")}
-          <option value="__lain" ${SP.draftHid==="__lain"?"selected":""}>Hadiah lain (ketik sendiri)</option>
-        </select>
+      <h4>1. Pilih & umumkan hadiah</h4>
+      ${ann.length ? `<div class="ann-box"><small>Tampil di semua HP (${ann.length} hadiah):</small><ol>${ann.map(x => `<li>${esc(x.prize)}</li>`).join("")}</ol></div>` : `<p class="muted" style="margin:0 0 10px;font-size:14px">Centang satu atau beberapa hadiah. Kalau lebih dari satu, sekali SPIN langsung keluar sebanyak itu pemenang berbeda.</p>`}
+      <div class="row" style="margin-bottom:8px">
+        <span style="font-size:14px">Pilih</span><input class="inp" id="spN" type="number" min="1" max="10" value="${SP.nPick || 5}" style="flex:0 0 72px;min-width:0">
+        <button class="btn sm" data-act="spPickN" ${SP.busy||spinningNow?"disabled":""}>hadiah berikutnya</button>
+        ${nSel ? `<button class="btn sm" data-act="spPickNone">Kosongkan</button>` : ""}
       </div>
-      <div class="row ${SP.draftHid==="__lain"?"":"hidden"}" style="margin-top:8px"><input class="inp" id="spCustom" maxlength="80" placeholder="Nama hadiah" value="${esc(SP.draftPrize)}"></div>
+      <div class="prize-pick">${prizes.length ? prizes.map(h => { const k = SP.sel.indexOf(h.id); return `<label class="${k >= 0 ? "on" : ""}"><input type="checkbox" data-act="spSel" value="${esc(h.id)}" ${k >= 0 ? "checked" : ""}>
+          ${h.gambar ? `<img src="${esc(imgUrl(h.id, h.gambar))}" alt="" loading="lazy">` : `<span class="gi">🎁</span>`}<span class="nm">${esc(h.hadiah)}</span><small>${esc(h.asal)}</small>${k >= 0 ? `<span class="ord">${k + 1}</span>` : ""}</label>`; }).join("") : `<div class="empty">Semua hadiah sudah ada pemenangnya.</div>`}
+        ${SP.custom.map((c, i) => `<label class="on"><input type="checkbox" checked data-act="spCustomDel" value="${i}"><span class="gi">🎁</span><span class="nm">${esc(c)}</span><small>hadiah lain</small><span class="ord">${SP.sel.length + i + 1}</span></label>`).join("")}
+      </div>
+      <div class="row" style="margin-top:8px"><input class="inp" id="spCustom" maxlength="80" placeholder="Hadiah lain (ketik, lalu Tambah)" value="${esc(SP.draftPrize || "")}"><button class="btn sm" data-act="spCustomAdd">Tambah</button></div>
       <div class="row" style="margin-top:10px">
-        <button class="btn pri" data-act="spAnnounce" ${SP.busy||spinningNow?"disabled":""}>Umumkan ke semua HP</button>
-        ${st?.announce ? `<button class="btn" data-act="spUnannounce" ${SP.busy||spinningNow?"disabled":""}>Batalkan</button>` : ""}
+        <button class="btn pri" data-act="spAnnounce" ${SP.busy||spinningNow||!nSel?"disabled":""}>Umumkan ${nSel > 1 ? nSel + " hadiah" : "hadiah"} ke semua HP</button>
+        ${ann.length ? `<button class="btn" data-act="spUnannounce" ${SP.busy||spinningNow?"disabled":""}>Batalkan pengumuman</button>` : ""}
       </div>
+      ${nSel > pool && pool ? `<p style="color:var(--hibiscus);font-size:13px;margin:8px 0 0">Peserta di roda tinggal ${pool}, pilih maksimal ${pool} hadiah.</p>` : ""}
     </div>
     <div class="panel">
       <h4>2. Putar</h4>
-      <button class="btn spin" data-act="spGo" ${(!st?.announce||spinningNow||SP.busy||!st?.pool.length)?"disabled":""}>${spinningNow?"BERPUTAR…":"SPIN"}</button>
-      <p class="muted" style="font-size:13px;margin:8px 0 0">${!st?.announce ? "Umumkan hadiah dulu untuk mengaktifkan SPIN." : `Hitung mundur 3 detik, lalu roda berputar sekitar 15 detik. ${st.pool.length} nama di roda.`}</p>
-      ${last && lastDone ? `<div class="row" style="margin-top:12px"><span style="flex:1;font-size:14px">Terakhir: <b>${esc(last.winner)}</b> (${esc(last.prize)})</span><button class="btn sm" data-act="spVoid" data-id="${esc(last.id)}" ${SP.busy||spinningNow?"disabled":""}>Tidak hadir, putar ulang</button></div>` : ""}
+      ${canStop ? `<button class="btn spin stop" data-act="spStop" ${SP.busy?"disabled":""}>STOP</button>`
+        : `<button class="btn spin" data-act="spGo" ${(!ann.length||spinningNow||SP.busy||!pool)?"disabled":""}>${spinningNow ? (m.stopping ? "BERHENTI…" : "BERPUTAR…") : ann.length > 1 ? `SPIN ${ann.length} HADIAH` : "SPIN"}</button>`}
+      <p class="muted" style="font-size:13px;margin:8px 0 0">${!ann.length ? "Umumkan hadiah dulu untuk mengaktifkan SPIN."
+        : spinningNow ? "Roda berhenti otomatis sekitar 15 detik. Tekan STOP kalau mau dipercepat; pemenangnya tetap sama, hanya berhentinya lebih cepat."
+        : `Hitung mundur 3 detik, lalu roda berputar sekitar 15 detik (bisa dipercepat dengan STOP). ${pool} nama di roda, urutannya diacak ulang tiap putaran.`}</p>
+      ${lastBatch.length && !spinningNow ? `<div class="last-batch"><small>Pemenang putaran terakhir:</small>${lastBatch.map(h => `<div class="row"><span style="flex:1;font-size:14px"><b>${esc(h.winner)}</b> (${esc(h.prize)})</span><button class="btn sm" data-act="spVoid" data-id="${esc(h.id)}" ${SP.busy?"disabled":""}>Tidak hadir</button></div>`).join("")}</div>` : ""}
     </div>
     <div class="panel">
       <h4>Link penonton</h4>
@@ -1706,7 +1765,12 @@ function renderSpinAdmin(force) {
 }
 document.addEventListener("change", e => {
   const t = e.target;
-  if (t.id === "spPick") { SP.draftHid = t.value; renderSpinAdmin(true); if (t.value === "__lain") setTimeout(() => $("#spCustom")?.focus(), 30); }
+  if (t.dataset?.act === "spSel") {
+    SP.sel = (SP.sel || []).filter(x => x !== t.value); if (t.checked) SP.sel.push(t.value);
+    renderSpinAdmin(true);
+  }
+  if (t.dataset?.act === "spCustomDel") { SP.custom.splice(+t.value, 1); renderSpinAdmin(true); }
+  if (t.id === "spN") SP.nPick = Math.max(1, Math.min(10, +t.value || 1));
   if (t.dataset?.act === "spDP") {
     const p = byId("peserta", t.value); if (!p) return;
     push({ op:"update", table:"peserta", id:p.id, changes:{ doorprize: t.checked ? "Ya" : "Tidak" }, label:p.nama, tableLabel:"Peserta", fieldLabels: fieldLabels("peserta") });
@@ -1717,17 +1781,28 @@ document.addEventListener("input", e => { if (e.target.id === "spCustom") SP.dra
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const a = b.dataset.act;
-  if (a === "spAnnounce") {
-    const hid = SP.draftHid;
-    if (!hid) return toast("Pilih hadiah dulu");
-    const prize = hid === "__lain" ? SP.draftPrize.trim() : (byId("hadiah", hid)?.hadiah || "");
-    if (!prize) return toast("Tulis nama hadiahnya");
-    spinApi("announce", { prize, hadiahId: hid === "__lain" ? "" : hid }).then(d => { if (d) { SP.draftHid = ""; SP.draftPrize = ""; renderSpinAdmin(true); } });
+  if (a === "spPickN") {
+    const n = Math.max(1, Math.min(10, +($("#spN")?.value) || 1)); SP.nPick = n;
+    // lewati hadiah yang namanya belum diisi panitia, misalnya "(belum diisi panitia)"
+    SP.sel = T("hadiah").filter(h => !h.penerima && h.hadiah && !/^\(/.test(h.hadiah.trim())).slice(0, n).map(h => h.id); SP.custom = [];
+    renderSpinAdmin(true);
   }
-  if (a === "spUnannounce") spinApi("announce", { prize:"" });
+  if (a === "spPickNone") { SP.sel = []; SP.custom = []; renderSpinAdmin(true); }
+  if (a === "spCustomAdd") {
+    const v = (SP.draftPrize || "").trim(); if (!v) return toast("Tulis nama hadiahnya");
+    SP.custom.push(v); SP.draftPrize = ""; renderSpinAdmin(true);
+  }
+  if (a === "spAnnounce") {
+    const items = (SP.sel || []).map(id => ({ prize: byId("hadiah", id)?.hadiah || "", hadiahId: id })).concat((SP.custom || []).map(c => ({ prize: c, hadiahId: "" })));
+    if (!items.length) return toast("Pilih hadiah dulu");
+    if (items.length > 10) return toast("Maksimal 10 hadiah per putaran");
+    spinApi("announce", { items }).then(d => { if (d) { SP.sel = []; SP.custom = []; renderSpinAdmin(true); } });
+  }
+  if (a === "spUnannounce") spinApi("announce", { items: [] });
   if (a === "spUnex") spinApi("exclude", { exclude: (SP.st?.exclude || []).filter(x => x !== b.dataset.id) });
   if (a === "spGo") spinApi("go");
-  if (a === "spVoid") { if (confirm("Batalkan hasil ini? Hadiahnya diumumkan lagi dan orang tersebut keluar dari roda.")) spinApi("void", { id: b.dataset.id }); }
+  if (a === "spStop") spinApi("stop");
+  if (a === "spVoid") { if (confirm("Batalkan pemenang ini? Hadiahnya masuk lagi ke daftar yang diumumkan dan orang tersebut keluar dari roda.")) spinApi("void", { id: b.dataset.id }); }
   if (a === "spReset") { if (confirm("Kosongkan semua hasil spinwheel? Nama penerima di Hadiah ikut dikosongkan. Pakai ini setelah uji coba.")) spinApi("reset", { confirm:"RESET" }); }
   if (a === "spCopy") { const link = location.origin + "/spin"; (navigator.clipboard?.writeText(link) || Promise.reject()).then(() => toast("Link disalin")).catch(() => toast(link)); }
   if (a === "spQR") showQR();
