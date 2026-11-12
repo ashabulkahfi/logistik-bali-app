@@ -226,9 +226,48 @@ const SPIN_DUR = 15000;     // lama putaran (ms), sengaja lama supaya dramatis
 const SPIN_LEAD = 3000;     // hitung mundur sebelum roda berputar (ms)
 const SPIN_EMPTY = { v: 0, announce: null, current: null, history: [], exclude: [], pool: [] };
 
+const SPIN_MAX_BATCH = 10;   // maksimal hadiah per satu putaran
+const STOP_LEAD = 900;       // jeda tombol STOP sampai roda mulai melambat (supaya semua HP sempat menerima)
+const STOP_MIN_LEFT = 2500;  // kalau sisa putaran kurang dari ini, STOP tidak perlu
+
 function randInt(n) {
   const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n;
 }
+// Acak urutan (Fisher-Yates) memakai angka acak kriptografis
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+/* Kurva putaran, harus sama persis dengan di index.html (SPIN_CURVE) */
+const SPIN_CURVE = (() => {
+  const N = 2000, a = 0.07, v = [], p = [0]; let sum = 0;
+  for (let i = 0; i < N; i++) { const t = (i + 0.5) / N; const ramp = t < a ? Math.sin(t / a * Math.PI / 2) : 1; v.push(ramp * Math.pow(1 - t, 1.6)); }
+  v.forEach((x) => { sum += x; p.push(sum); });
+  return p.map((x) => x / sum);
+})();
+function spinEase(t) { const f = t * (SPIN_CURVE.length - 1), i = Math.floor(f); return SPIN_CURVE[i] + (SPIN_CURVE[Math.min(i + 1, SPIN_CURVE.length - 1)] - SPIN_CURVE[i]) * (f - i); }
+const TAU = 2 * Math.PI;
+function finalRot(c) {
+  const seg = TAU / c.names.length, thw = (c.winnerIdx + 0.5 + c.jitter) * seg;
+  return c.turns * TAU + (((1.5 * Math.PI - thw) % TAU) + TAU) % TAU;
+}
+/* STOP: dari posisi & kecepatan roda saat stopAt, melambat mulus ke posisi akhir yang SAMA (pemenang tidak berubah). */
+function planStop(c, stopAt) {
+  const rf = finalRot(c), t = (stopAt - c.startAt) / c.dur;
+  const theta = rf * spinEase(t);
+  const v = rf * (spinEase(Math.min(1, t + 0.001)) - spinEase(t)) / (0.001 * c.dur); // rad per ms
+  let delta = rf - theta;
+  while (delta - TAU > Math.PI * 0.6) delta -= TAU;     // buang putaran sisa, sisakan sedikit
+  while (delta < Math.PI * 0.6) delta += TAU;
+  while (3 * delta / v < 1500) delta += TAU;              // jangan berhenti terlalu mendadak
+  const dur = Math.min(5000, Math.max(1500, 3 * delta / v));
+  return { stopAt, stopTheta: theta, stopDelta: delta, stopDur: Math.round(dur), endAt: stopAt + Math.round(dur) };
+}
+const endOf = (c) => c.endAt || c.startAt + c.dur;
+// Daftar hadiah yang diumumkan (bisa lebih dari satu)
+const annItems = (a) => !a ? [] : a.items && a.items.length ? a.items : [{ prize: a.prize, hadiahId: a.hadiahId || "" }];
+const annLabel = (items) => items.length === 1 ? items[0].prize : `${items.length} hadiah sekaligus`;
 // Ikut doorprize: kolom "doorprize" di Peserta (Ya/Tidak). Kalau belum diisi: pegawai ikut, keluarga tidak.
 const ikutDoorprize = (p) => p.doorprize ? p.doorprize === "Ya" : p.status !== "Keluarga";
 function buildPool(db, spin) {
@@ -241,12 +280,15 @@ function imgOf(db, hid) {
   return h && h.gambar ? `/api/img/${encodeURIComponent(hid)}?v=${encodeURIComponent(h.gambar)}` : "";
 }
 const spinPublic = (s) => ({
-  v: s.v, now: Date.now(), announce: s.announce && { prize: s.announce.prize, img: s.announce.img || "" }, pool: s.pool.map((p) => p.nama), exclude: s.exclude,
+  v: s.v, now: Date.now(), pool: s.pool.map((p) => p.nama), exclude: s.exclude,
+  announce: s.announce && { prize: s.announce.prize, img: s.announce.img || "", items: annItems(s.announce).map((x) => ({ prize: x.prize, img: x.img || "" })) },
   current: s.current && { id: s.current.id, prize: s.current.prize, img: s.current.img || "", names: s.current.names, winnerIdx: s.current.winnerIdx,
-    jitter: s.current.jitter, turns: s.current.turns, startAt: s.current.startAt, dur: s.current.dur },
+    jitter: s.current.jitter, turns: s.current.turns, startAt: s.current.startAt, dur: s.current.dur, endAt: endOf(s.current),
+    winners: (s.current.winners || [{ idx: s.current.winnerIdx, prize: s.current.prize, img: s.current.img || "" }]).map((w) => ({ idx: w.idx, prize: w.prize, img: w.img || "" })),
+    stopAt: s.current.stopAt || null, stopTheta: s.current.stopTheta, stopDelta: s.current.stopDelta, stopDur: s.current.stopDur },
   history: s.history.map((h) => ({ id: h.id, prize: h.prize, img: h.img || "", winner: h.winner, revealAt: h.revealAt, void: !!h.void })),
 });
-const spinning = (s) => s.current && Date.now() < s.current.startAt + s.current.dur;
+const spinning = (s) => s.current && Date.now() < endOf(s.current);
 
 async function addLog(st, entries) {
   const t = new Date().toISOString();
@@ -282,9 +324,11 @@ async function spinRoute(st, route, req, user) {
     err = null; logs = []; hadiahOps = [];
     if (route === "spin/refresh") { /* hitung ulang daftar peserta */ }
     else if (route === "spin/announce") {
-      const prize = clean(body.prize).slice(0, 80).trim();
       if (spinning(s)) { err = "Tunggu roda berhenti dulu"; return false; }
-      s.announce = prize ? { prize, hadiahId: clean(body.hadiahId), by: user } : null;
+      const raw = Array.isArray(body.items) ? body.items : body.prize ? [{ prize: body.prize, hadiahId: body.hadiahId }] : [];
+      const items = raw.map((x) => ({ prize: clean(x.prize).slice(0, 80).trim(), hadiahId: clean(x.hadiahId) })).filter((x) => x.prize)
+        .filter((x, i, a) => !x.hadiahId || a.findIndex((y) => y.hadiahId === x.hadiahId) === i).slice(0, SPIN_MAX_BATCH);
+      s.announce = items.length ? { items, prize: annLabel(items), hadiahId: items[0].hadiahId, by: user } : null;
     }
     else if (route === "spin/exclude") {
       s.exclude = Array.isArray(body.exclude) ? body.exclude.map(clean).slice(0, 200) : s.exclude;
@@ -292,20 +336,37 @@ async function spinRoute(st, route, req, user) {
     else if (route === "spin/go") {
       if (spinning(s)) { err = "Roda masih berputar"; return false; }
       if (!s.announce) { err = "Umumkan hadiahnya dulu"; return false; }
-      const pool = buildPool(db, s);
+      // Urutan nama di roda diacak ulang setiap putaran, jadi posisi pemenang tidak "berurutan" antar sesi.
+      const pool = shuffle(buildPool(db, s));
+      const items = annItems(s.announce);
       if (!pool.length) { err = "Tidak ada peserta tersisa di undian"; return false; }
-      const wi = randInt(pool.length);
+      if (items.length > pool.length) { err = `Peserta di roda tinggal ${pool.length}, kurangi jumlah hadiah`; return false; }
+      // Pilih pemenang berbeda sebanyak jumlah hadiah, acak kriptografis
+      const picks = shuffle(pool.map((_, i) => i)).slice(0, items.length);
       const startAt = Date.now() + SPIN_LEAD;
       const id = Date.now().toString(36) + randInt(1e6).toString(36);
-      const img = imgOf(db, s.announce.hadiahId);
-      s.current = { id, prize: s.announce.prize, hadiahId: s.announce.hadiahId, img, names: pool.map((p) => p.nama),
-        // jitter: posisi berhenti di dalam segmen pemenang. Dibuat dekat batas antar nama supaya menegangkan.
-        winnerIdx: wi, jitter: (randInt(2) ? 1 : -1) * (0.22 + randInt(1000) / 1000 * 0.2), turns: 5 + randInt(2), startAt, dur: SPIN_DUR, by: user };
-      s.history.push({ id, prize: s.announce.prize, hadiahId: s.announce.hadiahId, img, pid: pool[wi].id, winner: pool[wi].nama,
-        by: user, t: new Date().toISOString(), revealAt: startAt + SPIN_DUR });
-      logs = [{ user, table: "hadiah", tableLabel: "Spinwheel", action: "spin", label: `${s.announce.prize}: ${pool[wi].nama}` }];
-      hadiahOps = [[s.announce.hadiahId, pool[wi].nama, "✓"]];
+      const winners = items.map((it, k) => ({ idx: picks[k], prize: it.prize, hadiahId: it.hadiahId, img: imgOf(db, it.hadiahId) }));
+      s.current = { id, prize: annLabel(items), hadiahId: items[0].hadiahId, img: winners[0].img, names: pool.map((p) => p.nama),
+        // jitter: posisi berhenti di dalam segmen pemenang pertama. Dibuat dekat batas antar nama supaya menegangkan.
+        winnerIdx: picks[0], winners, jitter: (randInt(2) ? 1 : -1) * (0.22 + randInt(1000) / 1000 * 0.2), turns: 5 + randInt(2),
+        startAt, dur: SPIN_DUR, endAt: startAt + SPIN_DUR, by: user };
+      winners.forEach((w, k) => {
+        s.history.push({ id: id + (k ? "-" + k : ""), spin: id, prize: w.prize, hadiahId: w.hadiahId, img: w.img, pid: pool[w.idx].id, winner: pool[w.idx].nama,
+          by: user, t: new Date().toISOString(), revealAt: startAt + SPIN_DUR });
+      });
+      logs = winners.map((w) => ({ user, table: "hadiah", tableLabel: "Spinwheel", action: "spin", label: `${w.prize}: ${pool[w.idx].nama}` }));
+      hadiahOps = winners.map((w) => [w.hadiahId, pool[w.idx].nama, "✓"]);
       s.announce = null;
+    }
+    else if (route === "spin/stop") {
+      const c = s.current, now = Date.now();
+      if (!c || now >= endOf(c)) { err = "Roda tidak sedang berputar"; return false; }
+      if (c.stopAt) { err = "Roda sudah dihentikan"; return false; }
+      const stopAt = Math.max(now, c.startAt) + STOP_LEAD;
+      if (endOf(c) - stopAt < STOP_MIN_LEFT) { err = "Roda sudah hampir berhenti"; return false; }
+      Object.assign(c, planStop(c, stopAt));
+      s.history.forEach((h) => { if ((h.spin || h.id) === c.id) h.revealAt = c.endAt; });
+      logs = [{ user, table: "hadiah", tableLabel: "Spinwheel", action: "stop", label: "Roda dihentikan lebih cepat (pemenang tetap)" }];
     }
     else if (route === "spin/void") {
       if (spinning(s)) { err = "Tunggu roda berhenti dulu"; return false; }
@@ -313,8 +374,9 @@ async function spinRoute(st, route, req, user) {
       if (!h) { err = "Hasil tidak ditemukan"; return false; }
       h.void = true;
       if (!s.exclude.includes(h.pid)) s.exclude.push(h.pid);
-      s.announce = { prize: h.prize, hadiahId: h.hadiahId, by: user };
-      if (s.current && s.current.id === h.id) s.current = null;
+      const back = annItems(s.announce).concat([{ prize: h.prize, hadiahId: h.hadiahId }]).slice(0, SPIN_MAX_BATCH);
+      s.announce = { items: back, prize: annLabel(back), hadiahId: back[0].hadiahId, by: user };
+      if (s.current && (h.spin || h.id) === s.current.id) s.current = null;
       logs = [{ user, table: "hadiah", tableLabel: "Spinwheel", action: "batal", label: `${h.prize}: ${h.winner} (tidak hadir)` }];
       hadiahOps = [[h.hadiahId, "", ""]];
     }
@@ -326,7 +388,10 @@ async function spinRoute(st, route, req, user) {
     }
     else { err = "Tidak ditemukan"; return false; }
     s.pool = buildPool(db, s);
-    if (s.announce) s.announce.img = imgOf(db, s.announce.hadiahId);
+    if (s.announce) {
+      s.announce.items = annItems(s.announce).map((x) => ({ ...x, img: imgOf(db, x.hadiahId) }));
+      s.announce.img = s.announce.items[0] ? s.announce.items[0].img : "";
+    }
     s.v = (s.v || 0) + 1;
   });
   if (err) return json({ error: err }, 409);
